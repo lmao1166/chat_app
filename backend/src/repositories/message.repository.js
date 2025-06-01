@@ -55,7 +55,7 @@ class MessageRepository {
                     {
                         model: User,
                         as: 'sender',
-                        attributes: ['id', 'username', 'email']
+                        attributes: ['id', 'username', 'email', "profilePicUrl"]
                     }
                 ],
                 order: [['timestamp', 'DESC']]
@@ -75,8 +75,7 @@ class MessageRepository {
             const newMessage = await message.create(messageData, { transaction });
             await transaction.commit();
             
-            // Return the message with sender information
-            return await this.findById(newMessage.message_id);
+            return newMessage;
         } catch (error) {
             await transaction.rollback();
             throw new Error('Error creating message: ' + error.message);

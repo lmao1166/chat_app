@@ -5,10 +5,6 @@ const sendMessageValidator = [
         .notEmpty().withMessage('Nội dung tin nhắn không được để trống')
         .isLength({ min: 1, max: 5000 }).withMessage('Nội dung tin nhắn phải từ 1 đến 5000 ký tự')
         .exists().withMessage('Nội dung tin nhắn là bắt buộc'),
-    body('sender_id')
-        .isInt({ min: 1 }).withMessage('ID người gửi phải là số nguyên dương')
-        .notEmpty().withMessage('ID người gửi không được để trống')
-        .exists().withMessage('ID người gửi là bắt buộc'),
     body('conversation_id')
         .isInt({ min: 1 }).withMessage('ID cuộc trò chuyện phải là số nguyên dương')
         .notEmpty().withMessage('ID cuộc trò chuyện không được để trống')

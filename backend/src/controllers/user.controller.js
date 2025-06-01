@@ -1,4 +1,5 @@
 const userService = require('../services/user.service');
+const FileUtils = require('../utils/file.utils');
 
 const getAllUsers = async (req, res, next) => { //get
     try {
@@ -46,7 +47,22 @@ const register = async (req, res, next) => { //post
 
 const updateUser = async (req, res, next) => { //put 
     try {
-        const updatedUser = await userService.updateUser(req.params.id, req.body);
+        const userId = req.user.userId;;
+        const userData = req.body;
+          // Check if a new profile picture was uploaded
+        let profilePicUrl = null;
+        if (req.file) {
+            // Chỉ lưu tên file, không lưu đường dẫn đầy đủ
+            profilePicUrl = FileUtils.extractFileName(req.file.filename);
+        }
+        
+        // Add profile picture URL to user data if a new one was uploaded
+        if (profilePicUrl) {
+            userData.profilePicUrl = profilePicUrl;
+        }
+        
+        const updatedUser = await userService.updateUser(userId, userData);
+
         res.status(200).json({
             status: 200,
             success: true,

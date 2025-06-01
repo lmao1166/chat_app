@@ -8,31 +8,19 @@ const {
     messageIdValidator,
     conversationIdValidator 
 } = require('../middlewares/validators/message.validator');
+const { authenticateToken } = require('../middlewares/auth.middlewares');
 
-// GET /api/v1/messages - Get all messages
-router.get('/', messageController.getAllMessages);
+router.get('/', authenticateToken, messageController.getAllMessages);
 
-// GET /api/v1/messages/:id - Get message by ID
-router.get('/:id', messageIdValidator, validate, messageController.getMessageById);
+router.get('/:id', authenticateToken, messageIdValidator, validate, messageController.getMessageById);
 
-// GET /api/v1/messages/conversation/:conversationId - Get messages by conversation ID
-router.get('/conversation/:conversationId', conversationIdValidator, validate, messageController.getMessagesByConversationId);
+router.get('/conversation/:conversationId', authenticateToken, conversationIdValidator, validate, messageController.getMessagesByConversationId);
 
-// POST /api/v1/messages - Send a new message
-router.post('/', sendMessageValidator, validate, messageController.sendMessage);
+router.post('/', authenticateToken, sendMessageValidator, validate, messageController.sendMessage);
 
-// PUT /api/v1/messages/:id - Update a message
-router.put('/:id', updateMessageValidator, validate, messageController.updateMessage);
+router.put('/:id', authenticateToken, updateMessageValidator, validate, messageController.updateMessage);
 
-// DELETE /api/v1/messages/:id - Delete a message
-router.delete('/:id', messageIdValidator, validate, messageController.deleteMessage);
+router.delete('/:id', authenticateToken, messageIdValidator, validate, messageController.deleteMessage);
 
-router.get('/test/ok', (req, res) => {
-    res.status(200).json({
-        status: 200,
-        success: true,
-        message: 'Test endpoint is working'
-    });
-});
 
 module.exports = router;

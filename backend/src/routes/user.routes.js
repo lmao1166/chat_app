@@ -3,24 +3,29 @@ const express = require('express');
 const router = express.Router(); // Lấy đối tượng Router từ Express
 const userController = require('../controllers/user.controller'); // Import controller
 const { validate } = require('../middlewares/validators/validation.midleware'); // Import middleware để kiểm tra dữ liệu đầu vào
-const { registerValidator, loginValidator } = require('../middlewares/validators/auth.validator'); // Import các validator
-// Định nghĩa các đường dẫn API cho người dùng:
-// GET /api/users -> Gọi userController.getAllUsers
-router.get('/', userController.getAllUsers);
+const { registerValidator } = require('../middlewares/validators/auth.validator'); // Import các validator
+const { updateUserWithProfileValidator } = require('../middlewares/validators/user.validator');
+const { authenticateToken } = require('../middlewares/auth.middlewares');
+const { profilePictureUpload } = require('../middlewares/upload.middleware');
+const { sanitizeFilename } = require('../middlewares/filename.middleware');
 
-// GET /api/users/:id -> Gọi userController.getUserById (với :id là tham số)
-router.get('/:id', userController.getUserById);
 
-// POST /api/users -> Gọi userController.createUser
+router.get('/', authenticateToken, userController.getAllUsers);
+
+router.get('/:id', authenticateToken, userController.getUserById);
+
 router.post('/', registerValidator, validate, userController.register);
 
-// Đăng nhập với middleware xác thực
-// router.post('/login', loginValidator, validate, userController.login); 
+router.put(
+    '/', 
+    authenticateToken,
+    profilePictureUpload,
+    sanitizeFilename,
+    updateUserWithProfileValidator,
+    validate,
+    userController.updateUser
+);
 
-// PUT /api/users/:id -> Gọi userController.updateUser
-router.put('/:id', userController.updateUser);
+router.delete('/:id', authenticateToken, userController.deleteUser);
 
-// DELETE /api/users/:id -> Gọi userController.deleteUser
-router.delete('/:id', userController.deleteUser);
-
-module.exports = router; // Xuất router để app.js có thể sử dụng
+module.exports = router; 

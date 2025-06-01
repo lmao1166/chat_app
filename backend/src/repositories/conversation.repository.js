@@ -21,7 +21,6 @@ class ConservationRepository {
     
     async findPrivateConversations(userId1, userId2) {
         try {
-            // Use a raw query approach to find private conversations between two users
             const conversations = await sequelize.query(`
                 SELECT DISTINCT c.id
                 FROM conversations c
@@ -107,7 +106,7 @@ class ConservationRepository {
                             attributes: ['joined_at', 'left_at'],
                             where: { user_id: userId }
                         },
-                        attributes: ['id', 'username', 'email', 'profilePicUrl', 'status']
+                        attributes: ['id', 'username', 'email', 'profilePicUrl']
                     }
                 ],
                 order: [['last_message_at', 'DESC']],

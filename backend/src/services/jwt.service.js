@@ -1,4 +1,5 @@
 const jwt = require('jsonwebtoken');
+const invalidatedTokenRepository = require('../repositories/invalidatedToken.repository');
 
 class JwtService {
     generateToken(payload) {
@@ -33,6 +34,47 @@ class JwtService {
 
     decodeToken(token) {
         return jwt.decode(token);
+    }
+
+    async isTokenInvalidated(token) {
+        try {
+            return await invalidatedTokenRepository.isTokenInvalidated(token);
+        } catch (error) {
+            throw new Error('Error checking token invalidation: ' + error.message);
+        }
+    }
+
+    async invalidateToken(token, userId) {
+        try {
+            const decoded = this.decodeToken(token);
+            if (!decoded || !decoded.exp) {
+                throw new Error('Invalid token format');
+            }
+
+            const expiryTime = new Date(decoded.exp * 1000); // JWT exp is in seconds
+            
+            await invalidatedTokenRepository.create({
+                token: token,
+                user_id: userId,
+                expiry_time: expiryTime
+            });
+
+            return true;
+        } catch (error) {
+            throw new Error('Error invalidating token: ' + error.message);
+        }
+    }
+
+    getTokenExpiryTime(token) {
+        try {
+            const decoded = this.decodeToken(token);
+            if (!decoded || !decoded.exp) {
+                return null;
+            }
+            return new Date(decoded.exp * 1000);
+        } catch (error) {
+            return null;
+        }
     }
 }
 

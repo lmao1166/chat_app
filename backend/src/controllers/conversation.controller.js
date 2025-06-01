@@ -4,9 +4,11 @@ class ConservationController {
     async findOrCreateConversation(req, res, next) {
         try {
             const memberData = req.body;
-            const conversation = await conservationService.findOrCreateConversation(memberData);
-            res.status(201).json({
-                status: 201,
+            const userId = req.user.userId;
+            const conversation = await conservationService.findOrCreateConversation(memberData, userId);
+
+            res.status(200).json({
+                status: 200,
                 success: true,
                 data: conversation,
                 message: 'Tạo hoặc tìm cuộc trò chuyện thành công'
@@ -38,7 +40,7 @@ class ConservationController {
 
     async getConservationsByUserId(req, res, next) {
         try {
-            const userId = req.params.id;
+            const userId = req.user.userId;
             const conversations = await conservationService.getConversationsByUserId(userId);
             res.status(200).json(
                 {

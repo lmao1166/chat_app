@@ -45,35 +45,8 @@ class MessageService {
         }
     }
 
-    async sendMessage(messageData) {
+    async sendMessage(senderId, messageData) {
         try {
-            // Validate required fields
-            if (!messageData.content || messageData.content.trim() === '') {
-                const error = new Error('Nội dung tin nhắn không được để trống');
-                error.statusCode = 400;
-                throw error;
-            }
-
-            if (!messageData.sender_id) {
-                const error = new Error('ID người gửi là bắt buộc');
-                error.statusCode = 400;
-                throw error;
-            }
-
-            if (!messageData.conversation_id) {
-                const error = new Error('ID cuộc trò chuyện là bắt buộc');
-                error.statusCode = 400;
-                throw error;
-            }
-
-            // Check if sender exists
-            const sender = await userRepository.findById(messageData.sender_id);
-            if (!sender) {
-                const error = new Error('Người gửi không tồn tại');
-                error.statusCode = 404;
-                throw error;
-            }
-
             // Check if conversation exists
             const conversation = await conversationRepository.findById(messageData.conversation_id);
             if (!conversation) {
@@ -85,12 +58,10 @@ class MessageService {
             // Prepare message data
             const newMessageData = {
                 content: messageData.content.trim(),
-                sender_id: messageData.sender_id,
+                sender_id: senderId,
                 conversation_id: messageData.conversation_id,
                 timestamp: new Date(),
-                type: messageData.type || 'text',
-                attachment_url: messageData.attachment_url || null,
-                deleted_by_sender: false
+                attachment_url: messageData.attachment_url || null
             };
 
             // Create the message
@@ -124,11 +95,6 @@ class MessageService {
                 throw error;
             }
 
-            if (!messageData.content || messageData.content.trim() === '') {
-                const error = new Error('Nội dung tin nhắn không được để trống');
-                error.statusCode = 400;
-                throw error;
-            }
 
             const updateData = {
                 content: messageData.content.trim(),
@@ -180,12 +146,8 @@ class MessageService {
             sender: message.sender ? {
                 id: message.sender.id,
                 username: message.sender.username,
-                email: message.sender.email
-            } : null,
-            conversation: message.conversation ? {
-                id: message.conversation.id,
-                type: message.conversation.type,
-                name: message.conversation.name
+                email: message.sender.email,
+                profilePicUrl: message.sender.profilePicUrl,
             } : null
         };
     }

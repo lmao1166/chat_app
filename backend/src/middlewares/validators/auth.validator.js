@@ -21,17 +21,26 @@ const registerValidator = [
         })
 ];
 
-
 const loginValidator = [
     body('email')
         .isEmail()
-        .withMessage('Email không hợp lệ'),
+        .withMessage('Email không hợp lệ')
+        .notEmpty()
+        .withMessage('Email không được để trống'),
     body('password')
         .isLength({min: 3})
         .withMessage('Mật khẩu phải có ít nhất 3 ký tự')
+        .notEmpty()
+        .withMessage('Mật khẩu không được để trống')
+];
+
+// Validator cho logout - không cần body validation vì chỉ cần token từ header
+const logoutValidator = [
+    // Có thể thêm validation khác nếu cần
 ];
 
 module.exports = {
     registerValidator,
-    loginValidator
+    loginValidator,
+    logoutValidator
 };

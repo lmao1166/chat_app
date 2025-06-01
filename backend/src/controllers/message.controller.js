@@ -55,7 +55,9 @@ const getMessagesByConversationId = async (req, res, next) => {
 
 const sendMessage = async (req, res, next) => {
     try {
-        const newMessage = await messageService.sendMessage(req.body);
+        const messageData = req.body;
+        const senderId = req.user.userId; 
+        const newMessage = await messageService.sendMessage(senderId, messageData);
         res.status(201).json({
             status: 201,
             success: true,

@@ -2,14 +2,16 @@ require('dotenv').config();
 
 const app = require('./src/app'); 
 const {sequelize, connectDB} = require('./src/configs/database'); // Import sequelize và connectDB từ file cấu hình database
+const cleanupService = require('./src/services/cleanup.service'); // Import cleanup service
 
 // Import tất cả models để đảm bảo chúng được đăng ký với Sequelize
 require('./src/models/index'); // Import models và associations
 require('./src/models/user.model'); // Import model User
-require('./src/models/conversationMember.model'); // Import model Conversation
+require('./src/models/conversation.model'); // Import model Conversation
 require('./src/models/message.model'); // Import model Message
 require('./src/models/conversationMember.model'); // Import model ConversationMember
 require('./src/models/notification.model'); // Import model Notification
+require('./src/models/invalidatedToken.model'); // Import model InvalidatedToken
 
 const PORT = process.env.PORT || 3000;
 
@@ -29,12 +31,13 @@ async function startServer() {
     } catch (error) {
         console.error('Lỗi khi đồng bộ hóa database:', error);
         process.exit(1); // Thoát ứng dụng nếu không thể đồng bộ hóa
-    }
-
-    // 3. Khởi động server lắng nghe các yêu cầu HTTP
+    }    // 3. Khởi động server lắng nghe các yêu cầu HTTP
     app.listen(PORT, () => {
         console.log(`Server đang chạy trên cổng ${PORT}`);
         console.log(`Truy cập API tại: http://localhost:${PORT}/api/v1`);
+        
+        // Khởi động cleanup service để tự động xóa token hết hạn
+        cleanupService.startTokenCleanup();
     });
 }
 

@@ -7,6 +7,7 @@ const userRouter = require('./routes/user.routes');
 const conversationRouter = require('./routes/conversation.routes');
 const messageRouter = require('./routes/message.routes');
 const authRouter = require('./routes/auth.routes');
+const uploadRouter = require('./routes/upload.routes');
 // const notificationRouter = require('./routes/notification.routes');
 
 // Middleware
@@ -35,6 +36,7 @@ app.use('/api/v1/users', userRouter)
 app.use('/api/v1/conversations', conversationRouter)
 app.use('/api/v1/messages', messageRouter)
 app.use('/api/v1/auth', authRouter);
+app.use('/api/v1/uploads', uploadRouter);
 // app.use('/api/v1/notifications', notificationRouter);
 // Import message routes
 

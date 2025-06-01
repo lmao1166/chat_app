@@ -1,22 +1,25 @@
 const userRepository = require('../repositories/user.repository');
 const bcrypt = require('bcryptjs');
+const FileUtils = require('../utils/file.utils');
 
 
-class UserService {
+class UserService {    
     async getAllUsers() {
         try {
             const users = await userRepository.findAll(); //users 
+            const domain = process.env.DOMAIN || 'localhost:3000';
             return users.map(user => ({
                 id: user.id,
                 username: user.username,
                 email: user.email,
+                profilePicUrl: user.profilePicUrl ? `http://${domain}/api/v1/uploads/profiles/${user.profilePicUrl}` : null,
                 createdAt: user.createdAt,
                 updatedAt: user.updatedAt
             }));
         } catch (error) {
             throw new Error('Error fetching users: ' + error.message);
         }
-    } 
+    }      
     
     async getUserById(id) {
         const user = await userRepository.findById(id);
@@ -25,29 +28,43 @@ class UserService {
             const error = new Error('User not found');
             error.statusCode = 404;
             throw error;
-        }
+        }        
+        
+        const domain = process.env.DOMAIN || 'localhost:3000';
         const data = {
             id: user.id,
             username: user.username,
             email: user.email,
+            profilePicUrl: user.profilePicUrl ? `http://${domain}/api/v1/uploads/profiles/${user.profilePicUrl}` : null,
             createdAt: user.createdAt,
             updatedAt: user.updatedAt
         }
         return data;
     }
-
-    async register(userData) {
+      async register(userData) {
         const existingUser = await userRepository.findByEmail(userData.email);
         if (existingUser) {
             const error = new Error('Người dùng đã tồn tại');
             error.statusCode = 400;
             throw error;
-        }
-
-        try {
+        }        
+          try {
             // Loại bỏ confirmPassword trước khi lưu
             userData.password = await bcrypt.hash(userData.password, 10);
-            return await userRepository.create(userData);
+            
+            // Set ảnh đại diện mặc định nếu không có
+            if (!userData.profilePicUrl) {
+                userData.profilePicUrl = 'default-avatar.png';
+            }
+            
+            const newUser = await userRepository.create(userData);
+            
+            // Trả về với domain prefix cho profilePicUrl
+            const domain = process.env.DOMAIN || 'localhost:3000';
+            return {
+                ...newUser,
+                profilePicUrl: newUser.profilePicUrl ? `http://${domain}/api/v1/uploads/profiles/${newUser.profilePicUrl}` : null
+            };
         } catch (error) {
             throw new Error('Error creating user: ' + error.message);
         }
@@ -87,11 +104,18 @@ class UserService {
             userData.password = await bcrypt.hash(userData.password, 10);
         }
 
-        // Loại bỏ confirmPassword trước khi lưu
         const { confirmPassword, ...userDataToUpdate } = userData;
 
         try {
-            return await userRepository.update(id, userDataToUpdate);
+            const updatedUser = await userRepository.update(id, userDataToUpdate);
+            FileUtils.deleteFile(process.env.PROFILE_PICTURE_PATH + user.profilePicUrl);
+            
+            // Trả về với domain prefix cho profilePicUrl
+            const domain = process.env.DOMAIN || 'localhost:3000';
+            return {
+                ...updatedUser,
+                profilePicUrl: updatedUser.profilePicUrl ? `http://${domain}/api/v1/uploads/profiles/${updatedUser.profilePicUrl}` : null
+            };
         } catch (error) {
             throw new Error('Error updating user: ' + error.message);
         }

@@ -20,13 +20,11 @@ const User = database.sequelize.define('User', {
     password:{
         type: DataTypes.STRING(255), // Giả sử mã hóa password bằng bcrypt, nên giới hạn độ dài
         allowNull: false,
-    },
+    },    
     profilePicUrl:{
         type: DataTypes.STRING,
-        allowNull: true
-    },
-    status:{
-        type: DataTypes.ENUM('online', 'offline', 'away', 'busy')
+        allowNull: true,
+        defaultValue: '/api/v1/uploads/profiles/default-avatar.png'
     },
     last_seen:{
         type: DataTypes.DATE,

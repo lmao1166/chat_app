@@ -4,9 +4,9 @@ const memberRepository = require('../repositories/member.repository');
 const User = require('../models/user.model');
 
 class ConversationService {
-    async findOrCreateConversation(memberData) {
+    async findOrCreateConversation(memberData, userId) {
         try {
-            const user1 = await userRepository.findById(memberData.userId1);
+            const user1 = await userRepository.findById(userId);
             const user2 = await userRepository.findById(memberData.userId2);
 
             if (!user1 || !user2) {
@@ -15,7 +15,12 @@ class ConversationService {
                 throw error;
             }
 
-            const existingConversation = await conversationRepository.findPrivateConversations(memberData.userId1, memberData.userId2);
+            if( user1.id === user2.id) {
+                const error = new Error('Không thể tạo cuộc trò chuyện với chính mình');
+                error.statusCode = 400;
+            }
+
+            const existingConversation = await conversationRepository.findPrivateConversations(userId, memberData.userId2);
             if (existingConversation) {
                 const { members, ...conversationData } = existingConversation.toJSON();
                 return conversationData;

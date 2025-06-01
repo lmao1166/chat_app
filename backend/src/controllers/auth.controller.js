@@ -9,11 +9,56 @@ const login = async (req, res, next) => {
             status: 200,
             success: true,
             data: tokens,
-            message: 'Login successful'
+            message: 'Đăng nhập thành công'
         });
     } catch (error) {
         next(error);
     }
 };
 
-module.exports = { login };
+const logout = async (req, res, next) => {
+    try {
+        const authHeader = req.headers['authorization'];
+        const token = authHeader && authHeader.split(' ')[1];
+        
+        if (!token) {
+            const error = new Error('Token là bắt buộc');
+            error.statusCode = 401;
+            throw error;
+        }
+
+        const userId = req.user.userId; // Lấy từ middleware authentication
+        
+        const result = await AuthService.logout(token, userId);
+        res.status(200).json({
+            status: 200,
+            success: true,
+            data: result,
+            message: 'Đăng xuất thành công'
+        });
+    } catch (error) {
+        next(error);
+    }
+};
+
+const logoutAll = async (req, res, next) => {
+    try {
+        const userId = req.user.userId; // Lấy từ middleware authentication
+        
+        const result = await AuthService.logoutAll(userId);
+        res.status(200).json({
+            status: 200,
+            success: true,
+            data: result,
+            message: 'Đăng xuất khỏi tất cả thiết bị thành công'
+        });
+    } catch (error) {
+        next(error);
+    }
+};
+
+module.exports = { 
+    login, 
+    logout, 
+    logoutAll 
+};
