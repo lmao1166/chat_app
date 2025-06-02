@@ -3,7 +3,7 @@ const bcrypt = require('bcryptjs');
 const FileUtils = require('../utils/file.utils');
 
 
-class UserService {    
+class UserService {
     async getAllUsers() {
         try {
             const users = await userRepository.findAll(); //users 
@@ -19,8 +19,8 @@ class UserService {
         } catch (error) {
             throw new Error('Error fetching users: ' + error.message);
         }
-    }      
-    
+    }
+
     async getUserById(id) {
         const user = await userRepository.findById(id);
 
@@ -28,8 +28,8 @@ class UserService {
             const error = new Error('User not found');
             error.statusCode = 404;
             throw error;
-        }        
-        
+        }
+
         const domain = process.env.DOMAIN || 'localhost:3000';
         const data = {
             id: user.id,
@@ -41,24 +41,24 @@ class UserService {
         }
         return data;
     }
-      async register(userData) {
+    async register(userData) {
         const existingUser = await userRepository.findByEmail(userData.email);
         if (existingUser) {
             const error = new Error('Người dùng đã tồn tại');
             error.statusCode = 400;
             throw error;
-        }        
-          try {
+        }
+        try {
             // Loại bỏ confirmPassword trước khi lưu
             userData.password = await bcrypt.hash(userData.password, 10);
-            
+
             // Set ảnh đại diện mặc định nếu không có
             if (!userData.profilePicUrl) {
                 userData.profilePicUrl = 'default-avatar.png';
             }
-            
+
             const newUser = await userRepository.create(userData);
-            
+
             // Trả về với domain prefix cho profilePicUrl
             const domain = process.env.DOMAIN || 'localhost:3000';
             return {
@@ -104,12 +104,17 @@ class UserService {
             userData.password = await bcrypt.hash(userData.password, 10);
         }
 
+        if (!userData.profilePicUrl) {
+            userData.profilePicUrl = user.profilePicUrl; // Giữ nguyên ảnh đại diện nếu không có mới
+        }
+
         const { confirmPassword, ...userDataToUpdate } = userData;
 
         try {
             const updatedUser = await userRepository.update(id, userDataToUpdate);
-            FileUtils.deleteFile(process.env.PROFILE_PICTURE_PATH + user.profilePicUrl);
-            
+            if (user.profilePicUrl != "default-avatar.png") {
+                FileUtils.deleteFile(process.env.PROFILE_PICTURE_PATH + user.profilePicUrl);
+            }
             // Trả về với domain prefix cho profilePicUrl
             const domain = process.env.DOMAIN || 'localhost:3000';
             return {
