@@ -6,9 +6,9 @@ const {sequelize, connectDB} = require('./src/configs/database'); // Import sequ
 // Import tất cả models để đảm bảo chúng được đăng ký với Sequelize
 require('./src/models/index'); // Import models và associations
 require('./src/models/user.model'); // Import model User
-require('./src/models/conservationMember.model'); // Import model Conversation
+require('./src/models/conversationMember.model'); // Import model Conversation
 require('./src/models/message.model'); // Import model Message
-require('./src/models/conservationMember.model'); // Import model ConversationMember
+require('./src/models/conversationMember.model'); // Import model ConversationMember
 require('./src/models/notification.model'); // Import model Notification
 
 const PORT = process.env.PORT || 3000;

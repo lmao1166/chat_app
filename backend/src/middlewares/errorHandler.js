@@ -8,12 +8,24 @@ const errorHandler = (err, req, res, next) => {
     const statusCode = err.statusCode || 500;
     const message = err.message || 'Có lỗi xảy ra trên server';
 
-    // Gửi phản hồi lỗi về client
-    res.status(statusCode).json({
+    // Tạo response object
+    const response = {
         success: false,
         message: message,
-        error: process.env.NODE_ENV === 'development' ? err.stack : {}
-    });
+    };
+
+    // Nếu có validation errors, thêm vào response
+    if (err.validationMessages) {
+        response.errors = err.validationMessages;
+    }
+
+    // Thêm stack trace trong môi trường development
+    if (process.env.NODE_ENV === 'development') {
+        response.stack = err.stack;
+    }
+
+    // Gửi phản hồi lỗi về client
+    res.status(statusCode).json(response);
 };
 
 module.exports = errorHandler;

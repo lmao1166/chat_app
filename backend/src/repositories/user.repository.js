@@ -31,6 +31,7 @@ class UserRepository {
     async create(userData) {
         const transaction = await user.sequelize.transaction();
         try {
+            userData.password = await bcrypt.hash(userData.password, 10);
             const newUser = await user.create(userData, { transaction });
             await transaction.commit();
             return newUser;
@@ -43,6 +44,7 @@ class UserRepository {
     async update(id, userData) {
         const transaction = await user.sequelize.transaction();
         try {
+            userData.password = await bcrypt.hash(userData.password, 10);
             const [updatedRows] = await user.update(userData, {
                 where: { id: id },
                 transaction: transaction

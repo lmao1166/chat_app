@@ -1,3 +1,4 @@
+const { error } = require('winston');
 const userRepository = require('../repositories/user.repository');
 const bcrypt = require('bcryptjs');
 
@@ -16,8 +17,8 @@ class UserService {
         } catch (error) {
             throw new Error('Error fetching users: ' + error.message);
         }
-    } 
-    
+    }
+
     async getUserById(id) {
         const user = await userRepository.findById(id);
 
@@ -35,31 +36,19 @@ class UserService {
         }
         return data;
     }
-
+    // {
+    // }
     async register(userData) {
         const existingUser = await userRepository.findByEmail(userData.email);
+
         if (existingUser) {
             const error = new Error('Người dùng đã tồn tại');
             error.statusCode = 400;
             throw error;
         }
 
-        var password = userData.password;
-        if (!password || password.trim() === '') {
-            const error = new Error('Mật khẩu không được để trống');
-            error.statusCode = 400;
-            throw error;
-        }
-
-        if (userData.password !== userData.confirmPassword) {
-            const error = new Error('Mật khẩu không khớp');
-            error.statusCode = 400;
-            throw error;
-        }
-
         try {
             // Loại bỏ confirmPassword trước khi lưu
-            userData.password = await bcrypt.hash(userData.password, 10);
             return await userRepository.create(userData);
         } catch (error) {
             throw new Error('Error creating user: ' + error.message);
@@ -97,7 +86,6 @@ class UserService {
                 throw error;
             }
 
-            userData.password = await bcrypt.hash(userData.password, 10);
         }
 
         // Loại bỏ confirmPassword trước khi lưu
@@ -122,6 +110,26 @@ class UserService {
         } catch (error) {
             throw new Error('Error deleting user: ' + error.message);
         }
+    }
+
+    async findByEmail(email) {
+        const user = await userRepository.findByEmail(email);
+        if (!user) {
+            const error = new Error('Người dùng không tồn tại');
+            error.statusCode = 404;
+            throw error;
+        }
+        return user;
+    }
+
+    async verifyPassword(plainPassword, hashedPassword) {
+        const isMatch = await bcrypt.compare(plainPassword, hashedPassword);
+        if (!isMatch) {
+            const error = new Error('Email hoặc mật khẩu không đúng');
+            error.statusCode = 401;
+            throw error;
+        }
+        return true;
     }
 }
 

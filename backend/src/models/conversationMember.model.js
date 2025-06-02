@@ -3,7 +3,6 @@ const { DataTypes } = require('sequelize');
 const { sequelize } = require('../configs/database');
 
 const ConversationMember = sequelize.define('ConversationMember', {
-    // conversation_id và user_id sẽ là INTEGER do quan hệ
     joined_at: {
         type: DataTypes.DATE,
         allowNull: false

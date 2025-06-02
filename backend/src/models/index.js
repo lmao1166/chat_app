@@ -3,7 +3,7 @@ const { sequelize } = require('../configs/database');
 const User = require('./user.model');
 const Conversation = require('./conversation.model');
 const Message = require('./message.model');
-const ConversationMember = require('./conservationMember.model');
+const ConversationMember = require('./conversationMember.model');
 const Notification = require('./notification.model');
 
 // --- Định nghĩa Quan hệ (Associations) ---

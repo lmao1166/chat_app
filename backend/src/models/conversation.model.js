@@ -16,11 +16,16 @@ const Conversation = sequelize.define('Conversation', {
     name: {
         type: DataTypes.STRING(255),
         allowNull: true
+    },    thumbnail: {
+        type: DataTypes.STRING,
+        allowNull: true
     },
     last_message_at: {
         type: DataTypes.DATE,
-        allowNull: true
-    }
+        allowNull: true,
+        defaultValue: null
+    },
+
 }, {
     tableName: 'conversations',
     timestamps: true,
