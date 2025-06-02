@@ -31,10 +31,24 @@ async function startServer() {
     } catch (error) {
         console.error('Lỗi khi đồng bộ hóa database:', error);
         process.exit(1); // Thoát ứng dụng nếu không thể đồng bộ hóa
-    }    // 3. Khởi động server lắng nghe các yêu cầu HTTP
-    app.listen(PORT, () => {
+    }    // 3. Khởi động server lắng nghe các yêu cầu HTTP với Socket.IO
+    const http = require('http');
+    const { Server } = require('socket.io');
+    
+    const server = http.createServer(app);
+    const io = new Server(server, {
+        cors: {
+            origin: "*",
+            methods: ["GET", "POST"]
+        }
+    });
+
+    // Import và khởi tạo socket service
+    const socketService = require('./src/services/socket.service');
+    socketService.initialize(io);    server.listen(PORT, '0.0.0.0', () => {
         console.log(`Server đang chạy trên cổng ${PORT}`);
         console.log(`Truy cập API tại: http://localhost:${PORT}/api/v1`);
+        console.log(`Socket.IO server đã sẵn sàng cho real-time messaging`);
         
         // Khởi động cleanup service để tự động xóa token hết hạn
         cleanupService.startTokenCleanup();

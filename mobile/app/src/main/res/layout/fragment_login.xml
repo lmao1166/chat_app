@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        tools:context=".ui.auth.login.LoginFragment">
+
+        <ImageView
+            android:id="@+id/app_logo"
+            android:layout_width="150dp"
+            android:layout_height="150dp"
+            android:src="@drawable/logo"
+            android:layout_centerHorizontal="true"
+            android:layout_marginTop="70dp"
+            tools:ignore="ContentDescription" />
+
+        <EditText
+            android:id="@+id/edtEmail" android:autofillHints="emailAddress"
+            android:layout_width="370dp"
+            android:layout_height="50dp"
+            android:layout_marginTop="10dp"
+            android:background="@drawable/edit_background"
+            android:hint="@string/email"
+            android:layout_below="@id/app_logo"
+            android:layout_marginStart="20dp"
+            android:paddingStart="13dp"
+            android:inputType="textEmailAddress"
+            tools:ignore="RtlSymmetry" />
+
+        <EditText
+            android:id="@+id/edtPassword"
+            android:layout_width="370dp"
+            android:layout_height="50dp"
+            android:layout_marginTop="10dp"
+            android:autofillHints=""
+            android:background="@drawable/edit_background"
+            android:hint="@string/password"
+            android:layout_below="@id/edtEmail"
+            android:layout_marginStart="20dp"
+            android:paddingStart="13dp"
+            android:inputType="textPassword"
+            tools:ignore="RtlSymmetry" />
+
+        <Button
+            android:id="@+id/btnLogIn"
+            android:layout_width="150dp"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/edtPassword"
+            android:text="@string/log_in"
+            android:background="@drawable/btn_background"
+            android:textColor="@color/white"
+            android:textSize="20sp"
+            android:layout_centerHorizontal="true"
+            android:layout_marginTop="18dp"
+            />
+
+        <TextView
+            android:id="@+id/txt_signup"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/bcctk"
+            android:textColor="@color/black"
+            android:textSize="14sp"
+            android:layout_below="@id/btnLogIn"
+            android:layout_marginTop="50dp"
+            android:layout_centerHorizontal="true"
+            />
+
+        <!-- Thêm ProgressBar để hiển thị quá trình đăng nhập -->
+        <ProgressBar
+            android:id="@+id/progressBar"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_centerInParent="true"
+            android:visibility="gone" />
+
+    </RelativeLayout>
+</layout>

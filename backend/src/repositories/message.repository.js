@@ -58,7 +58,7 @@ class MessageRepository {
                         attributes: ['id', 'username', 'email', "profilePicUrl"]
                     }
                 ],
-                order: [['timestamp', 'DESC']]
+                order: [['timestamp', 'ASC']]
             };
 
             const mergedOptions = { ...defaultOptions, ...options };

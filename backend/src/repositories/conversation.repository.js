@@ -38,11 +38,12 @@ class ConservationRepository {
             });
 
             if (conversations.length > 0) {
-                // Return the full conversation with members
+                // Return the full conversation with members (bao gồm các trường cần thiết)
                 return await Conversation.findByPk(conversations[0].id, {
                     include: [{
                         model: User,
                         as: 'members',
+                        attributes: ['id', 'username', 'email', 'profilePicUrl'],
                         through: { attributes: ['joined_at'] },
                     }],
                 });
@@ -96,19 +97,33 @@ class ConservationRepository {
         }
     }
 
-    async findByUserId(userId) {        try {
+    async findByUserId(userId) {        
+        try {
             const conversations = await Conversation.findAll({
                 include: [
                     {
                         model: User,
                         as: 'members',
                         through: { 
-                            attributes: ['joined_at', 'left_at'],
-                            where: { user_id: userId }
+                            attributes: ['joined_at', 'left_at']
+                        },
+                        where: {
+                            id: {
+                                [Op.ne]: userId  // Chỉ lấy người dùng khác
+                            }
                         },
                         attributes: ['id', 'username', 'email', 'profilePicUrl']
                     }
                 ],
+                where: {
+                    id: {
+                        [Op.in]: sequelize.literal(`(
+                            SELECT conversation_id 
+                            FROM conversation_members 
+                            WHERE user_id = ${userId}
+                        )`)
+                    }
+                },
                 order: [['last_message_at', 'DESC']],
                 distinct: true
             });

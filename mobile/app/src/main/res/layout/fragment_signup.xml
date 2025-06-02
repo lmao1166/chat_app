@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"> <!-- Thêm namespace app nếu bạn dùng các thuộc tính của ConstraintLayout hoặc custom attributes -->
+
+    <!-- Bạn có thể thêm thẻ <data> ở đây nếu cần cho Data Binding -->
+    <!-- <data> -->
+    <!-- <variable name="viewModel" type="com.example.SignupViewModel" /> -->
+    <!-- </data> -->
+
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        tools:context=".ui.auth.register.SignupFragment">
+
+        <ImageView
+            android:id="@+id/app_logo"
+            android:layout_width="150dp"
+            android:layout_height="150dp"
+            android:layout_centerHorizontal="true"
+            android:layout_marginTop="70dp"
+            android:src="@drawable/logo" />
+
+        <EditText
+            android:id="@+id/edt_name"
+            android:layout_width="match_parent"
+            android:layout_height="50dp"
+            android:layout_below="@id/app_logo"
+            android:layout_marginStart="20dp"
+            android:layout_marginTop="70dp"
+            android:layout_marginEnd="20dp"
+            android:background="@drawable/edit_background"
+            android:hint="@string/name"
+            android:paddingStart="13dp"
+            tools:ignore="RtlSymmetry" />
+
+        <EditText
+            android:id="@+id/edt_email"
+            android:layout_width="match_parent"
+            android:layout_height="50dp"
+            android:layout_below="@id/edt_name"
+            android:layout_marginStart="20dp"
+            android:layout_marginTop="10dp"
+            android:layout_marginEnd="20dp"
+            android:background="@drawable/edit_background"
+            android:hint="@string/email"
+            android:paddingStart="13dp"
+            tools:ignore="RtlSymmetry" />
+
+        <EditText
+            android:id="@+id/edt_password"
+            android:layout_width="match_parent"
+            android:layout_height="50dp"
+            android:layout_below="@id/edt_email"
+            android:layout_marginStart="20dp"
+            android:layout_marginTop="10dp"
+            android:layout_marginEnd="20dp"
+            android:background="@drawable/edit_background"
+            android:hint="@string/password"
+            android:paddingStart="13dp"
+            tools:ignore="RtlSymmetry" />
+
+        <Button
+            android:id="@+id/btnSignUp"
+            android:layout_width="150dp"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/edt_password"
+            android:layout_centerHorizontal="true"
+            android:layout_marginTop="10dp"
+            android:background="@drawable/btn_background"
+            android:text="@string/signup"
+            android:textColor="@color/white"
+            android:textSize="20sp" />
+
+        <TextView
+            android:id="@+id/txt_login"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/btnSignUp"
+            android:layout_centerHorizontal="true"
+            android:layout_marginTop="50dp"
+            android:text="@string/bdctk"
+            android:textColor="@color/black"
+            android:textSize="14sp" />
+
+    </RelativeLayout>
+
+</layout>

@@ -12,6 +12,8 @@ const { sanitizeFilename } = require('../middlewares/filename.middleware');
 
 router.get('/', authenticateToken, userController.getAllUsers);
 
+router.get('/online', authenticateToken, userController.getOnlineUsers);
+
 router.get('/:id', authenticateToken, userController.getUserById);
 
 router.post('/', registerValidator, validate, userController.register);
@@ -28,4 +30,4 @@ router.put(
 
 router.delete('/:id', authenticateToken, userController.deleteUser);
 
-module.exports = router; 
+module.exports = router;

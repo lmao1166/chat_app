@@ -1,4 +1,5 @@
 const userService = require('../services/user.service');
+const socketService = require('../services/socket.service');
 const FileUtils = require('../utils/file.utils');
 
 const getAllUsers = async (req, res, next) => { //get
@@ -87,10 +88,34 @@ const deleteUser = async (req, res, next) => { //delete
     }
 };
 
+const getOnlineUsers = async (req, res, next) => {
+    try {
+        const onlineUserIds = socketService.getOnlineUsers();
+        const onlineUsers = await Promise.allSettled(
+            onlineUserIds.map(userId => userService.getUserById(userId))
+        );
+        
+        const validUsers = onlineUsers
+            .filter(result => result.status === 'fulfilled')
+            .map(result => result.value);
+
+        res.status(200).json({
+            status: 200,
+            success: true,
+            data: validUsers,
+            count: validUsers.length,
+            message: 'Lấy danh sách người dùng online thành công'
+        });
+    } catch (error) {
+        next(error);
+    }
+};
+
 module.exports = {
     getAllUsers,
     getUserById,
     register,
     updateUser,
-    deleteUser
+    deleteUser,
+    getOnlineUsers
 };

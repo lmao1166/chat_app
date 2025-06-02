@@ -1,137 +1,112 @@
 const messageRepository = require('../repositories/message.repository');
 const conversationRepository = require('../repositories/conversation.repository');
-const userRepository = require('../repositories/user.repository');
+const socketService = require('./socket.service');
 
 class MessageService {
+    // Helper method to create error with status code
+    _createError(message, statusCode = 500) {
+        const error = new Error(message);
+        error.statusCode = statusCode;
+        return error;
+    }
+
+    // Helper method to handle errors consistently
+    _handleError(error, defaultMessage) {
+        if (error.statusCode) throw error;
+        throw new Error(`${defaultMessage}: ${error.message}`);
+    }
+
     async getAllMessages() {
         try {
             const messages = await messageRepository.findAll();
             return messages.map(message => this.formatMessage(message));
         } catch (error) {
-            throw new Error('Error fetching messages: ' + error.message);
+            this._handleError(error, 'Error fetching messages');
         }
     }
 
     async getMessageById(id) {
         try {
             const message = await messageRepository.findById(id);
-            if (!message) {
-                const error = new Error('Tin nhắn không tồn tại');
-                error.statusCode = 404;
-                throw error;
-            }
+            if (!message) throw this._createError('Tin nhắn không tồn tại', 404);
             return this.formatMessage(message);
         } catch (error) {
-            if (error.statusCode) throw error;
-            throw new Error('Error fetching message: ' + error.message);
+            this._handleError(error, 'Error fetching message');
         }
     }
 
     async getMessagesByConversationId(conversationId, options = {}) {
         try {
-            // Check if conversation exists
             const conversation = await conversationRepository.findById(conversationId);
-            if (!conversation) {
-                const error = new Error('Cuộc trò chuyện không tồn tại');
-                error.statusCode = 404;
-                throw error;
-            }
+            if (!conversation) throw this._createError('Cuộc trò chuyện không tồn tại', 404);
 
             const messages = await messageRepository.findByConversationId(conversationId, options);
             return messages.map(message => this.formatMessage(message));
         } catch (error) {
-            if (error.statusCode) throw error;
-            throw new Error('Error fetching messages by conversation: ' + error.message);
+            this._handleError(error, 'Error fetching messages by conversation');
         }
     }
-
-    async sendMessage(senderId, messageData) {
+      async sendMessage(senderId, messageData) {
         try {
-            // Check if conversation exists
             const conversation = await conversationRepository.findById(messageData.conversation_id);
-            if (!conversation) {
-                const error = new Error('Cuộc trò chuyện không tồn tại');
-                error.statusCode = 404;
-                throw error;
-            }
+            if (!conversation) throw this._createError('Cuộc trò chuyện không tồn tại', 404);
 
-            // Prepare message data
-            const newMessageData = {
+            const newMessage = await messageRepository.create({
                 content: messageData.content.trim(),
                 sender_id: senderId,
                 conversation_id: messageData.conversation_id,
                 timestamp: new Date(),
                 attachment_url: messageData.attachment_url || null
-            };
-
-            // Create the message
-            const newMessage = await messageRepository.create(newMessageData);
-
-            // Update conversation's last_message_at
-            await conversationRepository.update(messageData.conversation_id, {
-                last_message_at: new Date()
             });
 
-            return this.formatMessage(newMessage);
+            // Update conversation and get formatted message
+            await conversationRepository.update(messageData.conversation_id, { last_message_at: new Date() });
+            const completeMessage = await messageRepository.findById(newMessage.id);
+            const formattedMessage = this.formatMessage(completeMessage);
+
+            // Emit real-time event
+            socketService.emitNewMessage(messageData.conversation_id, formattedMessage);
+            return formattedMessage;
         } catch (error) {
-            if (error.statusCode) throw error;
-            throw new Error('Error sending message: ' + error.message);
+            this._handleError(error, 'Error sending message');
         }
     }
 
     async updateMessage(id, messageData, userId) {
         try {
             const message = await messageRepository.findById(id);
-            if (!message) {
-                const error = new Error('Tin nhắn không tồn tại');
-                error.statusCode = 404;
-                throw error;
-            }
+            if (!message) throw this._createError('Tin nhắn không tồn tại', 404);
+            if (message.sender_id !== userId) throw this._createError('Bạn chỉ có thể chỉnh sửa tin nhắn của mình', 403);
 
-            // Check if user is the sender
-            if (message.sender_id !== userId) {
-                const error = new Error('Bạn chỉ có thể chỉnh sửa tin nhắn của mình');
-                error.statusCode = 403;
-                throw error;
-            }
-
-
-            const updateData = {
+            await messageRepository.update(id, {
                 content: messageData.content.trim(),
                 type: messageData.type || message.type,
                 attachment_url: messageData.attachment_url || message.attachment_url
-            };
+            });
 
-            await messageRepository.update(id, updateData);
             const updatedMessage = await messageRepository.findById(id);
-            return this.formatMessage(updatedMessage);
+            const formattedMessage = this.formatMessage(updatedMessage);
+
+            // Emit real-time event
+            socketService.emitMessageUpdate(message.conversation_id, formattedMessage);
+            return formattedMessage;
         } catch (error) {
-            if (error.statusCode) throw error;
-            throw new Error('Error updating message: ' + error.message);
+            this._handleError(error, 'Error updating message');
         }
     }
 
     async deleteMessage(id, userId) {
         try {
             const message = await messageRepository.findById(id);
-            if (!message) {
-                const error = new Error('Tin nhắn không tồn tại');
-                error.statusCode = 404;
-                throw error;
-            }
-
-            // Check if user is the sender
-            if (message.sender_id !== userId) {
-                const error = new Error('Bạn chỉ có thể xóa tin nhắn của mình');
-                error.statusCode = 403;
-                throw error;
-            }
+            if (!message) throw this._createError('Tin nhắn không tồn tại', 404);
+            if (message.sender_id !== userId) throw this._createError('Bạn chỉ có thể xóa tin nhắn của mình', 403);
 
             await messageRepository.markAsDeleted(id, userId);
+            socketService.emitMessageDelete(message.conversation_id, id, userId);
+            
             return { message: 'Tin nhắn đã được xóa thành công' };
         } catch (error) {
-            if (error.statusCode) throw error;
-            throw new Error('Error deleting message: ' + error.message);
+            this._handleError(error, 'Error deleting message');
         }
     }
 
