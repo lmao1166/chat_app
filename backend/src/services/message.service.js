@@ -41,11 +41,14 @@ class MessageService {
             if (!conversation) throw this._createError('Cuộc trò chuyện không tồn tại', 404);
 
             const messages = await messageRepository.findByConversationId(conversationId, options);
+            if (!messages || messages.length === 0) return [];
             return messages.map(message => this.formatMessage(message));
         } catch (error) {
             this._handleError(error, 'Error fetching messages by conversation');
         }
     }
+
+
       async sendMessage(senderId, messageData) {
         try {
             const conversation = await conversationRepository.findById(messageData.conversation_id);

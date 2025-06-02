@@ -31,17 +31,8 @@ const getMessageById = async (req, res, next) => {
 const getMessagesByConversationId = async (req, res, next) => {
     try {
         const conversationId = req.params.conversationId;
-        const options = {};
         
-        // Add pagination if provided
-        if (req.query.limit) {
-            options.limit = parseInt(req.query.limit);
-        }
-        if (req.query.offset) {
-            options.offset = parseInt(req.query.offset);
-        }
-
-        const messages = await messageService.getMessagesByConversationId(conversationId, options);
+        const messages = await messageService.getMessagesByConversationId(conversationId);
         res.status(200).json({
             status: 200,
             success: true,
