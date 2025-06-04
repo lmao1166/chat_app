@@ -62,7 +62,7 @@ const updateUser = async (req, res, next) => { //put
             userData.profilePicUrl = profilePicUrl;
         }
         
-        const updatedUser = await userService.updateUser(userId, userData);
+        const updatedUser = await userService.changeUserProfile(userId, userData);
 
         res.status(200).json({
             status: 200,
@@ -136,5 +136,5 @@ module.exports = {
     updateUser,
     deleteUser,
     getOnlineUsers,
-    changePassword
+    changePassword,
 };

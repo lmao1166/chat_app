@@ -134,12 +134,12 @@ class UserService {
             throw error;
         }
 
-        if (!userData.profilePicUrl) {
-            userData.profilePicUrl = user.profilePicUrl; // Giữ nguyên ảnh đại diện nếu không có mới
+        if (!profileData.profilePicUrl) {
+            profileData.profilePicUrl = user.profilePicUrl; 
         }
 
         try {
-            const updatedUser = await userRepository.update(id, { profilePicUrl: user.profilePicUrl });
+            const updatedUser = await userRepository.update(id, profileData);
 
             const domain = process.env.DOMAIN || 'localhost:3000';
 
