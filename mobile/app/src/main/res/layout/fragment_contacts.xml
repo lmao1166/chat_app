@@ -113,6 +113,17 @@
             app:layout_constraintTop_toBottomOf="@+id/toolbar"
             tools:listitem="@layout/item_contact" />
 
+        <!-- Progress Bar for loading state -->
+        <ProgressBar
+            android:id="@+id/progressBar"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:visibility="gone"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/toolbar" />
+
         <!-- Empty State View with modern styling -->
         <LinearLayout
             android:id="@+id/emptyStateView"

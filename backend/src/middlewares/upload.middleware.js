@@ -54,7 +54,10 @@ const chatUpload = multer({
 
 module.exports = {
     profileUpload,
-    profilePictureUpload: profileUpload.single('profilePicUrl'),
+    profilePictureUpload: profileUpload.fields([
+        { name: 'username', maxCount: 1 },
+        { name: 'profilePicture', maxCount: 1 }
+    ]),
     chatUpload,
     chatImageUpload: chatUpload.single('chatImage')
 };

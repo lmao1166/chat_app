@@ -11,6 +11,7 @@ import androidx.lifecycle.ViewModelProvider
 import com.example.chatapp.MainActivity
 import com.example.chatapp.R
 import com.example.chatapp.databinding.FragmentProfileBinding
+import com.example.chatapp.model.response.UserResponse
 import com.example.chatapp.ui.auth.login.LoginFragment
 import com.example.chatapp.utils.TokenManager
 import com.squareup.picasso.Picasso
@@ -47,15 +48,67 @@ class ProfileFragment : Fragment() {
             binding.userName.text = user?.username
             binding.userEmail.text = user?.email
 
+            // Debug logging
+            android.util.Log.d("ProfileFragment", "User data: $user")
+            android.util.Log.d("ProfileFragment", "ProfilePicUrl: ${user?.profilePicUrl}")
+
             // Load profile image if available
             user?.profilePicUrl?.let { profileUrl ->
                 if (profileUrl.isNotEmpty()) {
-                    Picasso.get()
-                        .load(profileUrl)
-                        .placeholder(R.drawable.default_avatar)
-                        .error(R.drawable.default_avatar)
-                        .into(binding.profileImage)
+                    android.util.Log.d("ProfileFragment", "Loading image from: $profileUrl")
+
+                    // Đảm bảo URL không có khoảng trắng và được định dạng đúng
+                    val cleanUrl = profileUrl.trim()
+
+                    // Xử lý đặc biệt cho URL localhost - chuyển sang IP thực của máy phát triển
+                    val finalUrl = cleanUrl.replace("http://localhost", "http://192.168.1.10")
+
+                    // Debug URL
+                    android.util.Log.d("ProfileFragment", "Final URL: $finalUrl")
+
+                    try {
+                        // Tắt SSL check khi chạy debug (chỉ dùng trong phát triển)
+                        if (finalUrl.startsWith("http://")) {
+                            android.util.Log.d("ProfileFragment", "Using non-HTTPS URL")
+                        }
+
+                        // Thêm logging cho Picasso
+                        Picasso.get().setLoggingEnabled(true)
+
+                        // Tải ảnh với cài đặt cơ bản trước
+                        Picasso.get()
+                            .load(finalUrl)
+                            .placeholder(R.drawable.default_avatar)
+                            .error(R.drawable.default_avatar)
+                            .into(binding.profileImage, object : com.squareup.picasso.Callback {
+                                override fun onSuccess() {
+                                    android.util.Log.d("ProfileFragment", "Image loaded successfully")
+                                }
+                                override fun onError(e: Exception?) {
+                                    android.util.Log.e("ProfileFragment", "Image load error: ${e?.message}", e)
+                                    binding.profileImage.setImageResource(R.drawable.default_avatar)
+
+                                    // Hiển thị thông báo lỗi để debug
+                                    Toast.makeText(
+                                        requireContext(),
+                                        "Không thể tải ảnh: ${e?.message ?: "Lỗi không xác định"}",
+                                        Toast.LENGTH_SHORT
+                                    ).show()
+                                }
+                            })
+                    } catch (e: Exception) {
+                        android.util.Log.e("ProfileFragment", "Exception loading image: ${e.message}", e)
+                        binding.profileImage.setImageResource(R.drawable.default_avatar)
+                    }
+                } else {
+                    android.util.Log.d("ProfileFragment", "ProfileUrl is empty, using default avatar")
+                    // Set default avatar if no profile picture
+                    binding.profileImage.setImageResource(R.drawable.default_avatar)
                 }
+            } ?: run {
+                android.util.Log.d("ProfileFragment", "ProfilePicUrl is null, using default avatar")
+                // Set default avatar if profilePicUrl is null
+                binding.profileImage.setImageResource(R.drawable.default_avatar)
             }
         }
 
@@ -71,12 +124,11 @@ class ProfileFragment : Fragment() {
                 (activity as? MainActivity)?.navigateToFragment(LoginFragment(), false)
             }
         }
-    }
-
-    private fun setupClickListeners() {
+    }    private fun setupClickListeners() {
         binding.editProfileOption.setOnClickListener {
-            // Navigate to edit profile screen
-            navigateToFragment(EditProfileFragment())
+            // Navigate to edit profile screen with current user data
+            val currentUser = viewModel.userProfile.value
+            navigateToEditProfile(currentUser)
         }
 
         binding.changePasswordOption.setOnClickListener {
@@ -88,6 +140,19 @@ class ProfileFragment : Fragment() {
             // Hiển thị hộp thoại xác nhận trước khi đăng xuất
             showLogoutConfirmationDialog()
         }
+    }    private fun navigateToEditProfile(user: UserResponse?) {
+        val fragment = EditProfileFragment().apply {
+            arguments = Bundle().apply {
+                user?.let {
+                    putString("username", it.username)
+                    putString("profilePicUrl", it.profilePicUrl)
+                }
+            }
+        }
+        parentFragmentManager.beginTransaction()
+            .replace(R.id.fragmentContainer, fragment)
+            .addToBackStack(null)
+            .commit()
     }
 
     private fun showLogoutConfirmationDialog() {

@@ -114,4 +114,8 @@ class ProfileViewModel(application: Application) : AndroidViewModel(application)
             _logoutStatus.value = false
         }
     }
+
+    fun refreshUserProfile() {
+        fetchUserProfile()
+    }
 }

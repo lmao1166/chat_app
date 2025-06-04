@@ -1,87 +1,166 @@
 package com.example.chatapp.ui.home.profile
 
+import android.annotation.SuppressLint
+import android.app.Activity
+import android.content.Intent
+import android.net.Uri
 import android.os.Bundle
+import android.provider.MediaStore
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.databinding.DataBindingUtil
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.ViewModelProvider
 import com.example.chatapp.R
 import com.example.chatapp.databinding.FragmentEditProfileBinding
+import com.example.chatapp.model.response.UserResponse
+import com.example.chatapp.utils.PermissionUtils
+import com.squareup.picasso.Picasso
 
 class EditProfileFragment : Fragment() {
     private lateinit var binding: FragmentEditProfileBinding
+    private lateinit var viewModel: EditProfileViewModel
+    private var selectedImageUri: Uri? = null
+    private var currentUser: UserResponse? = null    // Activity result launcher for image selection
+    private val imagePickerLauncher = registerForActivityResult(
+        ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        if (result.resultCode == Activity.RESULT_OK) {
+            result.data?.data?.let { uri ->
+                selectedImageUri = uri                // Display selected image
+                Picasso.get()
+                    .load(uri)
+                    .placeholder(R.drawable.default_avatar)
+                    .error(R.drawable.default_avatar)
+                    .fit()
+                    .centerCrop()
+                    .into(binding.profileImage)
+            }
+        }
+    }
+
+    // Permission launcher for storage access
+    private val permissionLauncher = registerForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { isGranted ->
+        if (isGranted) {
+            launchImagePicker()
+        } else {
+            Toast.makeText(
+                requireContext(),
+                "Cần cấp quyền truy cập ảnh để thay đổi ảnh đại diện",
+                Toast.LENGTH_SHORT
+            ).show()
+        }
+    }
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
-        // Sử dụng data binding để inflate layout
         binding = DataBindingUtil.inflate(inflater, R.layout.fragment_edit_profile, container, false)
+        viewModel = ViewModelProvider(this)[EditProfileViewModel::class.java]
 
-        // Thiết lập các sự kiện click
+        setupObservers()
         setupClickListeners()
-
-        // Khởi tạo dữ liệu người dùng hiện tại
-        setupInitialData()
+        loadCurrentUserData()
 
         return binding.root
     }
 
-    private fun setupInitialData() {
-        // TODO: Lấy thông tin người dùng hiện tại từ database hoặc preferences
-        binding.nameEditText.setText("Nguyễn Văn A")
+    private fun setupObservers() {
+        viewModel.isLoading.observe(viewLifecycleOwner) { isLoading ->
+            binding.saveButton.isEnabled = !isLoading
+            binding.saveButton.text = if (isLoading) "Đang lưu..." else "Lưu thay đổi"
+        }
+
+        viewModel.error.observe(viewLifecycleOwner) { errorMessage ->
+            if (!errorMessage.isNullOrEmpty()) {
+                Toast.makeText(requireContext(), errorMessage, Toast.LENGTH_SHORT).show()
+            }
+        }
+
+        viewModel.updateSuccess.observe(viewLifecycleOwner) { success ->
+            if (success) {
+                Toast.makeText(requireContext(), "Cập nhật thông tin thành công", Toast.LENGTH_SHORT).show()
+                
+                // Refresh profile data in parent fragment
+                (parentFragmentManager.fragments.find { it is ProfileFragment } as? ProfileFragment)?.let {
+                    // You could call refresh method if ProfileViewModel has one
+                    // For now, we'll just go back and let onResume handle the refresh
+                }
+                
+                parentFragmentManager.popBackStack()
+            }
+        }
+
+        viewModel.updatedUser.observe(viewLifecycleOwner) { user ->
+            // User data updated successfully
+            currentUser = user
+        }
+    }    private fun loadCurrentUserData() {
+        // Get user data from arguments
+        arguments?.let { args ->
+            val username = args.getString("username", "")
+            val profilePicUrl = args.getString("profilePicUrl", "")
+
+            binding.usernameEditText.setText(username)            // Load profile image if available
+            if (!profilePicUrl.isNullOrEmpty()) {
+                Picasso.get()
+                    .load(profilePicUrl)
+                    .placeholder(R.drawable.default_avatar)
+                    .error(R.drawable.default_avatar)
+                    .fit()
+                    .centerCrop()
+                    .into(binding.profileImage)
+            } else {
+                binding.profileImage.setImageResource(R.drawable.default_avatar)
+            }
+        }
     }
 
     private fun setupClickListeners() {
-        // Xử lý sự kiện nút quay lại - fixing by correctly finding the button in the Toolbar
-        binding.backButton.setOnClickListener{
+        binding.backButton.setOnClickListener {
             parentFragmentManager.popBackStack()
         }
 
-        // Xử lý sự kiện lưu thông tin
         binding.saveButton.setOnClickListener {
-            // Giả lập việc cập nhật thông tin
-            val name = binding.nameEditText.text.toString().trim()
-            if (name.isEmpty()) {
-                Toast.makeText(context, "Tên người dùng không được để trống", Toast.LENGTH_SHORT).show()
-                return@setOnClickListener
-            }
-
-            // Hiển thị dialog xác nhận hoặc trực tiếp hiển thị thông báo
-            showConfirmationDialog(name)
+            saveUserInformation()
         }
 
-        // Xử lý sự kiện thay đổi ảnh đại diện
         binding.profileImage.setOnClickListener {
-            // TODO: Thêm chức năng chọn ảnh từ thư viện
-            Toast.makeText(context, "Tính năng đang được phát triển", Toast.LENGTH_SHORT).show()
+            openImagePicker()
+        }
+
+        binding.changeProfileImageText.setOnClickListener {
+            openImagePicker()
+        }
+    }    private fun openImagePicker() {
+        if (PermissionUtils.hasImagePickerPermission(requireContext())) {
+            launchImagePicker()
+        } else {
+            // Request permission using modern API
+            val permission = PermissionUtils.getRequiredPermission()
+            permissionLauncher.launch(permission)
         }
     }
 
-    private fun showConfirmationDialog(name: String) {
-        // Hiển thị AlertDialog để xác nhận thay đổi
-        val alertDialog = androidx.appcompat.app.AlertDialog.Builder(requireContext())
-            .setTitle("Xác nhận thay đổi")
-            .setMessage("Bạn có chắc muốn cập nhật thông tin cá nhân?")
-            .setPositiveButton("Xác nhận") { _, _ ->
-                // Mô phỏng việc lưu thông tin thành công
-                saveUserInformation(name)
-            }
-            .setNegativeButton("Hủy", null)
-            .create()
+    @SuppressLint("IntentReset")
+    private fun launchImagePicker() {
+        val intent = Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI)
+        intent.type = "image/*"
+        imagePickerLauncher.launch(intent)
+    }private fun saveUserInformation() {
+        val username = binding.usernameEditText.text.toString().trim()
 
-        alertDialog.show()
-    }
+        if (username.isEmpty()) {
+            Toast.makeText(context, "Tên người dùng không được để trống", Toast.LENGTH_SHORT).show()
+            return
+        }
 
-    private fun saveUserInformation(name: String) {
-        // TODO: Thực hiện lưu thông tin vào database hoặc backend
-
-        // Hiển thị thông báo thành công
-        Toast.makeText(context, "Đã cập nhật thông tin thành công", Toast.LENGTH_SHORT).show()
-
-        // Quay lại màn hình Profile
-        requireActivity().onBackPressedDispatcher.onBackPressed()
+        viewModel.updateProfile(username, selectedImageUri)
     }
 }

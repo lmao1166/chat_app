@@ -48,13 +48,27 @@ const register = async (req, res, next) => { //post
 
 const updateUser = async (req, res, next) => { //put 
     try {
-        const userId = req.user.userId;;
+        const userId = req.user.userId;
         const userData = req.body;
-          // Check if a new profile picture was uploaded
+        
+        console.log('Update user request:', {
+            userId,
+            userData,
+            files: req.files
+        });
+        
+        // Check if a new profile picture was uploaded
         let profilePicUrl = null;
-        if (req.file) {
+        if (req.files && req.files.profilePicture && req.files.profilePicture[0]) {
+            const uploadedFile = req.files.profilePicture[0];
             // Chỉ lưu tên file, không lưu đường dẫn đầy đủ
-            profilePicUrl = FileUtils.extractFileName(req.file.filename);
+            profilePicUrl = FileUtils.extractFileName(uploadedFile.filename);
+            
+            console.log('Profile picture uploaded:', {
+                filename: uploadedFile.filename,
+                originalname: uploadedFile.originalname,
+                size: uploadedFile.size
+            });
         }
         
         // Add profile picture URL to user data if a new one was uploaded

@@ -1,4 +1,9 @@
 package com.example.chatapp.model.request
 
-class ProfileRequest {
-}
+import kotlinx.serialization.Serializable
+
+@Serializable
+data class ProfileRequest(
+    val username: String,
+    val email: String? = null
+)
