@@ -153,20 +153,22 @@ class UserService {
         } catch (error) {
             throw new Error('Error updating user profile: ' + error.message);
         }
-    }
-
-    async changePassword(id, passwordData) {
+    }    async changePassword(id, passwordData) {
         const user = await userRepository.findById(id);
-        if(this.verifyPassword(passwordData.password, user.password) === false) {
-            const error = new Error('Mật khẩu cũ không đúng');
-            error.statusCode = 400;
-            throw error;
-        }
-
+        
         if (!user) {
             const error = new Error('Người dùng không tồn tại');
             error.statusCode = 404;
             throw error;
+        }
+
+        // Verify current password với await
+        try {
+            await this.verifyPassword(passwordData.password, user.password);
+        } catch (error) {
+            const customError = new Error('Mật khẩu cũ không đúng');
+            customError.statusCode = 400;
+            throw customError;
         }
 
         if (passwordData.newPassword.trim() === '') {

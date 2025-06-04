@@ -27,6 +27,11 @@ class SignUpFragment : Fragment() {
         return binding.root
     }
 
+    private fun setupObservers() {
+        // Set up observers for any LiveData from ViewModel if needed
+        // For example, observe signup result or error messages
+    }
+
     private fun setUpListeners() {
         binding.goLoginScreen.setOnClickListener {
             (activity as? MainActivity)?.navigateToFragment(LoginFragment(), true)

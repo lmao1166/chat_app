@@ -3,10 +3,10 @@ package com.example.chatapp
 import android.content.Context
 import com.example.chatapp.api.AuthApi
 import com.example.chatapp.api.UserApi
+import com.example.chatapp.utils.AuthInterceptor
 import com.example.chatapp.utils.TokenManager
 import okhttp3.Interceptor
 import okhttp3.OkHttpClient
-import okhttp3.Response
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
@@ -14,10 +14,8 @@ import java.util.concurrent.TimeUnit
 
 object RetrofitInstance {
     // Cấu hình cho các môi trường khác nhau
-    private const val EMULATOR_URL = "http://10.0.2.2:3000/"      // Cho Android Emulator
     private const val REAL_DEVICE_URL = "http://192.168.1.10:3000/" // Cho thiết bị thật
-    private const val LOCALHOST_URL = "http://localhost:3000/"      // Cho test local
-    
+
     // Chọn URL phù hợp - thay đổi theo môi trường bạn đang dùng
     private const val BASE_URL = REAL_DEVICE_URL  // <-- Đang dùng cho Emulator
     
@@ -41,10 +39,12 @@ object RetrofitInstance {
         .addConverterFactory(GsonConverterFactory.create())
         .build()
 
-    // Cập nhật client và retrofit để sử dụng token
+    // Cập nhật client và retrofit để sử dụng token và AuthInterceptor
     fun updateWithToken(context: Context) {
         val tokenManager = TokenManager.getInstance(context)
-        val authInterceptor = Interceptor { chain ->
+
+        // Token interceptor - thêm token vào header của request
+        val tokenInterceptor = Interceptor { chain ->
             val originalRequest = chain.request()
 
             // Lấy access token từ TokenManager
@@ -62,10 +62,11 @@ object RetrofitInstance {
             chain.proceed(newRequest)
         }
 
-        // Tạo client mới với auth interceptor
+        // Tạo client mới với token interceptor và auth interceptor
         client = OkHttpClient.Builder()
             .addInterceptor(loggingInterceptor)
-            .addInterceptor(authInterceptor)
+            .addInterceptor(tokenInterceptor)
+            .addInterceptor(AuthInterceptor(context)) // Thêm AuthInterceptor để xử lý 401 responses
             .connectTimeout(15, TimeUnit.SECONDS)
             .readTimeout(15, TimeUnit.SECONDS)
             .writeTimeout(15, TimeUnit.SECONDS)
