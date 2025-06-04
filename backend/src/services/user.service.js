@@ -126,6 +126,69 @@ class UserService {
         }
     }
 
+    async changeUserProfile(id, profileData) {
+        const user = await userRepository.findById(id);
+        if (!user) {
+            const error = new Error('Người dùng không tồn tại');
+            error.statusCode = 404;
+            throw error;
+        }
+
+        if (!userData.profilePicUrl) {
+            userData.profilePicUrl = user.profilePicUrl; // Giữ nguyên ảnh đại diện nếu không có mới
+        }
+
+        try {
+            const updatedUser = await userRepository.update(id, { profilePicUrl: user.profilePicUrl });
+
+            const domain = process.env.DOMAIN || 'localhost:3000';
+
+            if (user.profilePicUrl != "default-avatar.png") {
+                FileUtils.deleteFile(process.env.PROFILE_PICTURE_PATH + user.profilePicUrl);
+            }
+            return {
+                ...updatedUser,
+                profilePicUrl: updatedUser.profilePicUrl ? `http://${domain}/api/v1/uploads/profiles/${updatedUser.profilePicUrl}` : null
+            };
+        } catch (error) {
+            throw new Error('Error updating user profile: ' + error.message);
+        }
+    }
+
+    async changePassword(id, passwordData) {
+        const user = await userRepository.findById(id);
+        if(this.verifyPassword(passwordData.password, user.password) === false) {
+            const error = new Error('Mật khẩu cũ không đúng');
+            error.statusCode = 400;
+            throw error;
+        }
+
+        if (!user) {
+            const error = new Error('Người dùng không tồn tại');
+            error.statusCode = 404;
+            throw error;
+        }
+
+        if (passwordData.newPassword.trim() === '') {
+            const error = new Error('Mật khẩu mới không được để trống');
+            error.statusCode = 400;
+            throw error;
+        }
+
+        if (passwordData.newPassword !== passwordData.confirmPassword) {
+            const error = new Error('Mật khẩu mới không khớp');
+            error.statusCode = 400;
+            throw error;
+        }
+
+        try {
+            const hashedPassword = await bcrypt.hash(passwordData.newPassword, 10);
+            return await userRepository.update(id, { password: hashedPassword });
+        } catch (error) {
+            throw new Error('Error changing password: ' + error.message);
+        }
+    }
+
     async deleteUser(id) {
         try {
             const user = await userRepository.findById(id);

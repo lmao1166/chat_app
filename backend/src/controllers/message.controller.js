@@ -31,8 +31,9 @@ const getMessageById = async (req, res, next) => {
 const getMessagesByConversationId = async (req, res, next) => {
     try {
         const conversationId = req.params.conversationId;
+        const userId = req.user.userId; // Lấy userId từ token
         
-        const messages = await messageService.getMessagesByConversationId(conversationId);
+        const messages = await messageService.getMessagesByConversationId(conversationId, userId);
         res.status(200).json({
             status: 200,
             success: true,

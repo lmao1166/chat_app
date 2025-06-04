@@ -25,6 +25,20 @@ class MemberRepository {
             throw new Error('Error bulk creating members: ' + error.message);
         }
     }
+
+    async isUserInConversation(userId, conversationId) {
+        try {
+            const member = await conservationMember.findOne({
+                where: {
+                    user_id: userId,
+                    conversation_id: conversationId
+                }
+            });
+            return !!member; // Trả về true nếu tìm thấy, false nếu không
+        } catch (error) {
+            throw new Error('Error checking user membership: ' + error.message);
+        }
+    }
 }
 
 module.exports = new MemberRepository();

@@ -92,14 +92,14 @@ dependencies {
     //noinspection UseTomlInstead
     implementation ("com.squareup.okhttp3:okhttp:4.12.0")
     //noinspection UseTomlInstead
-    implementation ("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.8.1") // hoặc phiên bản mới nhất
+    implementation ("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.10.2") // hoặc phiên bản mới nhất
     //noinspection UseTomlInstead
-    implementation ("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.8.1")
+    implementation ("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.10.2")
     //noinspection UseTomlInstead
     implementation("androidx.fragment:fragment-ktx:1.8.7")
     //noinspection UseTomlInstead
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.9.0")// Thay bằng phiên bản mới nhất
-
+    implementation (libs.circleimageview)
     //noinspection GradleDependency,UseTomlInstead
     implementation("androidx.navigation:navigation-fragment-ktx:2.7.7")
     //noinspection GradleDependency,UseTomlInstead
@@ -107,7 +107,7 @@ dependencies {
     //noinspection UseTomlInstead
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.10.2")
     //noinspection UseTomlInstead
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.8.1")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.10.2")
 
 }
 

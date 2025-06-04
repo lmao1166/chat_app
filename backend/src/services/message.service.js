@@ -1,5 +1,6 @@
 const messageRepository = require('../repositories/message.repository');
 const conversationRepository = require('../repositories/conversation.repository');
+const memberRepository = require('../repositories/member.repository');
 const socketService = require('./socket.service');
 
 class MessageService {
@@ -33,12 +34,14 @@ class MessageService {
         } catch (error) {
             this._handleError(error, 'Error fetching message');
         }
-    }
-
-    async getMessagesByConversationId(conversationId, options = {}) {
+    }    async getMessagesByConversationId(conversationId, userId, options = {}) {
         try {
             const conversation = await conversationRepository.findById(conversationId);
             if (!conversation) throw this._createError('Cuộc trò chuyện không tồn tại', 404);
+
+            // Kiểm tra xem user có phải là thành viên của cuộc trò chuyện không
+            const isMember = await memberRepository.isUserInConversation(userId, conversationId);
+            if (!isMember) throw this._createError('Bạn không có quyền truy cập cuộc trò chuyện này', 403);
 
             const messages = await messageRepository.findByConversationId(conversationId, options);
             if (!messages || messages.length === 0) return [];

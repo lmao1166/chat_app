@@ -10,7 +10,7 @@ const {
 } = require('../middlewares/validators/message.validator');
 const { authenticateToken } = require('../middlewares/auth.middlewares');
 
-router.get('/', authenticateToken, messageController.getAllMessages);
+// router.get('/', authenticateToken, messageController.getAllMessages);
 
 router.get('/:id', authenticateToken, messageIdValidator, validate, messageController.getMessageById);
 

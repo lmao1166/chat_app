@@ -75,6 +75,24 @@ const updateUser = async (req, res, next) => { //put
     }
 };
 
+const changePassword = async (req, res, next) => { 
+    try {
+        const userId = req.user.userId;
+        const passwordData = req.body;
+
+        const updatedUser = await userService.changePassword(userId, passwordData);
+
+        res.status(200).json({
+            status: 200,
+            success: true,
+            data: updatedUser,
+            message: 'Đổi mật khẩu thành công'
+        });
+    } catch (error) {
+        next(error);
+    }
+}
+
 const deleteUser = async (req, res, next) => { //delete
     try {
         await userService.deleteUser(req.params.id);
@@ -117,5 +135,6 @@ module.exports = {
     register,
     updateUser,
     deleteUser,
-    getOnlineUsers
+    getOnlineUsers,
+    changePassword
 };

@@ -12,6 +12,7 @@ import com.example.chatapp.MainActivity
 import com.example.chatapp.R
 import com.example.chatapp.databinding.FragmentLoginBinding
 import com.example.chatapp.ui.auth.AuthViewModel
+import com.example.chatapp.ui.auth.register.SignUpFragment
 import com.example.chatapp.ui.home.HomeFragment
 import com.example.chatapp.utils.TokenManager
 
@@ -25,13 +26,19 @@ class LoginFragment : Fragment() {
         savedInstanceState: Bundle?
     ): View {
         // Inflate the layout for this fragment
-        binding = DataBindingUtil.inflate(inflater, R.layout.fragment_login, container, false)        // Khởi tạo ViewModel
-        viewModel = ViewModelProvider(this)[LoginViewModel::class.java]
-        authViewModel = ViewModelProvider(requireActivity())[AuthViewModel::class.java]
+        binding = DataBindingUtil.inflate(inflater, R.layout.fragment_login, container, false)
 
-        // Thiết lập observer và listener
-        setupObservers()
-        setupListeners()
+        // Khởi tạo ViewModel
+        try {
+            viewModel = ViewModelProvider(this)[LoginViewModel::class.java]
+            authViewModel = ViewModelProvider(requireActivity())[AuthViewModel::class.java]
+
+            // Thiết lập observer và listener
+            setupObservers()
+            setupListeners()
+        } catch (e: Exception) {
+            Toast.makeText(requireContext(), "Error initializing: ${e.message}", Toast.LENGTH_LONG).show()
+        }
 
         return binding.root
     }
@@ -65,7 +72,7 @@ class LoginFragment : Fragment() {
                 is LoginViewModel.LoginResult.Error -> {
                     // Ẩn loading khi có lỗi
                     binding.progressBar.visibility = View.GONE
-                    
+
                     // Hiển thị thông báo lỗi
                     Toast.makeText(context, result.message, Toast.LENGTH_LONG).show()
                 }
@@ -100,6 +107,12 @@ class LoginFragment : Fragment() {
             // Gọi ViewModel để thực hiện login
             viewModel.login(email, password)
         }
+
+        binding.goSignupScreen.setOnClickListener {
+            (activity as? MainActivity)?.navigateToFragment(SignUpFragment(), true)
+        }
     }
+
+
 }
 

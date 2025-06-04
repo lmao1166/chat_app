@@ -28,6 +28,8 @@ router.put(
     userController.updateUser
 );
 
+router.put('/password', authenticateToken, userController.changePassword);
+
 router.delete('/:id', authenticateToken, userController.deleteUser);
 
 module.exports = router;
