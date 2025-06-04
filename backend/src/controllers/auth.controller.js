@@ -31,11 +31,11 @@ const logout = async (req, res, next) => {
 
         const userId = req.user.userId; // Lấy từ middleware authentication
         
-        const result = await AuthService.logout(token, userId);
+        await AuthService.logout(token, userId);
         res.status(200).json({
             status: 200,
             success: true,
-            data: result,
+            data: null,
             message: 'Đăng xuất thành công'
         });
     } catch (error) {

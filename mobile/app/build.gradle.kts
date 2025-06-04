@@ -109,5 +109,13 @@ dependencies {
     //noinspection UseTomlInstead
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.10.2")
 
+    // Picasso for image loading
+    //noinspection UseTomlInstead
+    implementation("com.squareup.picasso:picasso:2.8")
+
+    // Circle ImageView
+    //noinspection UseTomlInstead
+    implementation("de.hdodenhof:circleimageview:3.1.0")
+
 }
 

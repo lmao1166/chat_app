@@ -13,7 +13,7 @@ import kotlinx.coroutines.launch
 class LoginViewModel : ViewModel() {
 
     private val repository = AuthRepository()
-    private val TAG = "LoginViewModel"
+    private val tag = "LoginViewModel"
 
     private val _loginResult = MutableLiveData<LoginResult>()
     val loginResult: LiveData<LoginResult> = _loginResult
@@ -22,34 +22,34 @@ class LoginViewModel : ViewModel() {
         viewModelScope.launch {
             try {
                 val response = repository.login(email, password)
-                Log.d(TAG, "Login API response: ${response.body()}")
+                Log.d(tag, "Login API response: ${response.body()}")
                 if (response.isSuccessful) {
                     // Log the raw response to check what's coming from API
                     val rawJson = response.body().toString()
-                    Log.d(TAG, "Raw API response: $rawJson")
+                    Log.d(tag, "Raw API response: $rawJson")
 
                     response.body()?.let {
                         if (it.success && it.data != null) {
                             // Log specific token values
-                            Log.d(TAG, "Access Token: ${it.data.accessToken}")
-                            Log.d(TAG, "Refresh Token: ${it.data.refreshToken}")
+                            Log.d(tag, "Access Token: ${it.data.accessToken}")
+                            Log.d(tag, "Refresh Token: ${it.data.refreshToken}")
 
                             _loginResult.value = LoginResult.Success(it)
                         } else {
-                            _loginResult.value = LoginResult.Error(it.message ?: "Đăng nhập không thành công")
+                            _loginResult.value = LoginResult.Error(it.message)
                         }
                     } ?: run {
-                        Log.e(TAG, "Empty response body despite successful API call")
+                        Log.e(tag, "Empty response body despite successful API call")
                         _loginResult.value = LoginResult.Error("Empty response body")
                     }
                 } else {
                     // Try to get error message from response
                     val errorBody = response.errorBody()?.string()
-                    Log.e(TAG, "Login failed: ${response.code()}, Error: $errorBody")
+                    Log.e(tag, "Login failed: ${response.code()}, Error: $errorBody")
                     _loginResult.value = LoginResult.Error("Login failed: ${response.code()}")
                 }
             } catch (e: Exception) {
-                Log.e(TAG, "Exception during login", e)
+                Log.e(tag, "Exception during login", e)
                 _loginResult.value = LoginResult.Error("Network error: ${e.message}")
             }
         }

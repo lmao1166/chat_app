@@ -12,7 +12,9 @@
         <androidx.appcompat.widget.Toolbar
             android:id="@+id/toolbar"
             android:layout_width="match_parent"
-            android:layout_height="?attr/actionBarSize"
+            android:layout_height="wrap_content"
+            android:paddingTop="24dp"
+            android:minHeight="?attr/actionBarSize"
             android:background="@color/blue"
             app:layout_constraintTop_toTopOf="parent">
 
@@ -22,16 +24,18 @@
                 android:layout_height="wrap_content"
                 android:src="@drawable/baseline_arrow_back_24"
                 android:contentDescription="Back"
-                app:tint="@color/white"/>
+                app:tint="@color/white"
+                tools:ignore="HardcodedText" />
 
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginStart="16dp"
-                android:text="Chỉnh sửa thông tin"
+                android:text=" Chỉnh sửa thông tin"
                 android:textColor="@color/white"
                 android:textSize="20sp"
-                android:textStyle="bold" />
+                android:textStyle="bold"
+                tools:ignore="HardcodedText" />
         </androidx.appcompat.widget.Toolbar>
 
         <!-- Edit Profile Content -->
