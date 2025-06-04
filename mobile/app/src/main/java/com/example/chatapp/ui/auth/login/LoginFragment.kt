@@ -12,7 +12,7 @@ import com.example.chatapp.MainActivity
 import com.example.chatapp.R
 import com.example.chatapp.databinding.FragmentLoginBinding
 import com.example.chatapp.ui.auth.AuthViewModel
-import com.example.chatapp.ui.auth.register.SignUpFragment
+import com.example.chatapp.ui.auth.register.RegisterFragment
 import com.example.chatapp.ui.home.HomeFragment
 import com.example.chatapp.utils.TokenManager
 
@@ -109,7 +109,7 @@ class LoginFragment : Fragment() {
         }
 
         binding.goSignupScreen.setOnClickListener {
-            (activity as? MainActivity)?.navigateToFragment(SignUpFragment(), true)
+            (activity as? MainActivity)?.navigateToFragment(RegisterFragment(), true)
         }
     }
 
