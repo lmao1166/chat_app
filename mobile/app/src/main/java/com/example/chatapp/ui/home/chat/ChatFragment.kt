@@ -1,6 +1,10 @@
 package com.example.chatapp.ui.home.chat
 
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
+import android.text.Editable
+import android.text.TextWatcher
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
@@ -30,6 +34,11 @@ class ChatFragment : Fragment() {
     private lateinit var conversationAdapter: ConversationAdapter
     private lateinit var messageAdapter: MessageAdapter
     private lateinit var viewModel: ChatViewModel
+    
+    // Typing indicator
+    private var typingHandler: Handler? = null
+    private var typingRunnable: Runnable? = null
+    private var isCurrentlyTyping = false
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -170,9 +179,7 @@ class ChatFragment : Fragment() {
         setupMessageList(binding)
 
         // Configure chat functionality with the user ID
-        setupMessageObservers(binding)
-
-        // Load chat history
+        setupMessageObservers(binding)        // Load chat history
         loadChatHistory()
 
         // Initialize message sending functionality
@@ -183,6 +190,9 @@ class ChatFragment : Fragment() {
                 binding.messageInput.text?.clear()
             }
         }
+
+        // Setup typing indicator
+        setupTypingIndicator(binding)
 
         // Setup attachment button if needed
         binding.attachmentButton.setOnClickListener {
@@ -195,7 +205,37 @@ class ChatFragment : Fragment() {
         }
     }
 
-    private fun setupMessageObservers(binding: FragmentChatRoomBinding) {
+    private fun setupTypingIndicator(binding: FragmentChatRoomBinding) {
+        typingHandler = Handler(Looper.getMainLooper())
+        
+        binding.messageInput.addTextChangedListener(object : TextWatcher {
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
+            
+            override fun afterTextChanged(s: Editable?) {
+                val text = s?.toString()?.trim() ?: ""
+                
+                if (text.isNotEmpty() && !isCurrentlyTyping) {
+                    // Start typing
+                    isCurrentlyTyping = true
+                    viewModel.sendTyping(true)
+                }
+                
+                // Cancel previous runnable
+                typingRunnable?.let { typingHandler?.removeCallbacks(it) }
+                
+                // Set new runnable to stop typing after 2 seconds of inactivity
+                typingRunnable = Runnable {
+                    if (isCurrentlyTyping) {
+                        isCurrentlyTyping = false
+                        viewModel.sendTyping(false)
+                    }
+                }
+                
+                typingHandler?.postDelayed(typingRunnable!!, 2000)
+            }
+        })
+    }    private fun setupMessageObservers(binding: FragmentChatRoomBinding) {
         // Observe loading state
         viewModel.isLoading.observe(viewLifecycleOwner) { isLoading ->
             binding.progressBar.visibility = if (isLoading) View.VISIBLE else View.GONE
@@ -217,6 +257,37 @@ class ChatFragment : Fragment() {
                 binding.messagesRecyclerView.scrollToPosition(messages.size - 1)
             }
         }
+
+        // Observe typing indicators
+        viewModel.typingUsers.observe(viewLifecycleOwner) { typingUsers ->
+            updateTypingIndicator(binding, typingUsers)
+        }
+
+        // Observe online users
+        viewModel.onlineUsers.observe(viewLifecycleOwner) { onlineUsers ->
+            updateOnlineStatus(binding, onlineUsers)
+        }
+    }    private fun updateTypingIndicator(binding: FragmentChatRoomBinding, typingUsers: List<String>) {
+        if (typingUsers.isEmpty()) {
+            // Hide typing indicator
+            binding.typingIndicatorContainer.visibility = View.GONE
+            binding.typingIndicator.visibility = View.GONE
+        } else {
+            // Show typing indicator
+            binding.typingIndicatorContainer.visibility = View.VISIBLE
+            binding.typingIndicator.visibility = View.VISIBLE
+            binding.typingIndicatorText.text = when (typingUsers.size) {
+                1 -> "${typingUsers[0]} is typing..."
+                2 -> "${typingUsers[0]} and ${typingUsers[1]} are typing..."
+                else -> "${typingUsers[0]} and ${typingUsers.size - 1} others are typing..."
+            }
+        }
+    }
+
+    private fun updateOnlineStatus(binding: FragmentChatRoomBinding, onlineUsers: List<String>) {
+        // Update online status indicator if user is online
+        val isOnline = userName?.let { onlineUsers.contains(it) } ?: false
+        binding.onlineIndicator.visibility = if (isOnline) View.VISIBLE else View.GONE
     }
 
     private fun setupMessageList(binding: FragmentChatRoomBinding) {
@@ -236,17 +307,24 @@ class ChatFragment : Fragment() {
             this.layoutManager = layoutManager
             adapter = messageAdapter
         }
-    }
-
-    private fun loadChatHistory() {
+    }    private fun loadChatHistory() {
         if (conversationId != null) {
             // Case 1: We have a conversation ID, load messages directly
             viewModel.loadMessages(conversationId!!)
+            // Join the conversation room for real-time updates
+            viewModel.joinConversation(conversationId.toString())
         } else if (userId != null) {
             // Case 2: No conversation ID but we have a userId - create or get conversation first
             try {
                 val userIdInt = userId!!.toInt()
                 viewModel.loadOrCreateConversation(userIdInt)
+                
+                // Observe current conversation to join room when it's available
+                viewModel.currentConversation.observe(viewLifecycleOwner) { conversation ->
+                    conversation?.let {
+                        viewModel.joinConversation(it.id.toString())
+                    }
+                }
             } catch (e: NumberFormatException) {
                 Log.e("ChatFragment", "Invalid user ID: $userId")
                 showEmptyChat("ID người dùng không hợp lệ")
@@ -283,11 +361,32 @@ class ChatFragment : Fragment() {
             // binding.emptyStateView.visibility = View.VISIBLE
             // binding.emptyStateErrorText.text = errorMessage
         }
-    }
-
-    override fun onDestroyView() {
+    }    override fun onDestroyView() {
         super.onDestroyView()
+        
+        // Stop typing indicator
+        if (isCurrentlyTyping) {
+            viewModel.sendTyping(false)
+        }
+        
+        // Clean up typing handler
+        typingRunnable?.let { typingHandler?.removeCallbacks(it) }
+        typingHandler = null
+        typingRunnable = null
+        
+        // Leave conversation room
+        viewModel.leaveConversation()
+        
         _binding = null
         _chatRoomBinding = null
+    }
+
+    override fun onPause() {
+        super.onPause()
+        // Stop typing when fragment is paused
+        if (isCurrentlyTyping) {
+            isCurrentlyTyping = false
+            viewModel.sendTyping(false)
+        }
     }
 }

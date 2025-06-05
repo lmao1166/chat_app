@@ -46,9 +46,7 @@
                     app:civ_border_width="1dp"
                     app:layout_constraintBottom_toBottomOf="parent"
                     app:layout_constraintStart_toEndOf="@id/backButton"
-                    app:layout_constraintTop_toTopOf="parent" />
-
-                <LinearLayout
+                    app:layout_constraintTop_toTopOf="parent" />                <LinearLayout
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_marginStart="12dp"
@@ -59,16 +57,32 @@
                     app:layout_constraintStart_toEndOf="@+id/contactImage"
                     app:layout_constraintTop_toTopOf="parent">
 
-                    <TextView
-                        android:id="@+id/contactName"
+                    <LinearLayout
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:ellipsize="end"
-                        android:fontFamily="sans-serif-medium"
-                        android:maxLines="1"
-                        android:textColor="@color/white"
-                        android:textSize="16sp"
-                        tools:text="Nguyễn Văn A" />
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical">
+
+                        <TextView
+                            android:id="@+id/contactName"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:ellipsize="end"
+                            android:fontFamily="sans-serif-medium"
+                            android:maxLines="1"
+                            android:textColor="@color/white"
+                            android:textSize="16sp"
+                            tools:text="Nguyễn Văn A" />
+
+                        <View
+                            android:id="@+id/onlineIndicator"
+                            android:layout_width="8dp"
+                            android:layout_height="8dp"
+                            android:layout_marginStart="8dp"
+                            android:background="@drawable/circle_green"
+                            android:visibility="gone" />
+
+                    </LinearLayout>
 
                     <TextView
                         android:id="@+id/onlineStatus"
@@ -99,9 +113,7 @@
                     tools:ignore="ContentDescription" />
 
             </androidx.constraintlayout.widget.ConstraintLayout>
-        </androidx.appcompat.widget.Toolbar>
-
-        <!-- Messages List -->
+        </androidx.appcompat.widget.Toolbar>        <!-- Messages List -->
         <androidx.recyclerview.widget.RecyclerView
             android:id="@+id/messagesRecyclerView"
             android:layout_width="match_parent"
@@ -111,11 +123,46 @@
             android:paddingTop="16dp"
             android:paddingBottom="8dp"
             app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
-            app:layout_constraintBottom_toTopOf="@+id/chatInputContainer"
+            app:layout_constraintBottom_toTopOf="@+id/typingIndicatorContainer"
             app:layout_constraintTop_toBottomOf="@+id/toolbar"
             app:stackFromEnd="true"
             tools:itemCount="5"
             tools:listitem="@layout/item_message" />
+
+        <!-- Typing Indicator -->
+        <LinearLayout
+            android:id="@+id/typingIndicatorContainer"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:paddingHorizontal="16dp"
+            android:paddingVertical="8dp"
+            android:visibility="gone"
+            app:layout_constraintBottom_toTopOf="@+id/chatInputContainer">
+
+            <LinearLayout
+                android:id="@+id/typingIndicator"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:background="@drawable/message_bubble_received"
+                android:orientation="horizontal"
+                android:paddingHorizontal="12dp"
+                android:paddingVertical="8dp"
+                android:visibility="gone">
+
+                <TextView
+                    android:id="@+id/typingIndicatorText"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:fontFamily="sans-serif"
+                    android:text="Someone is typing..."
+                    android:textColor="#666666"
+                    android:textSize="14sp"
+                    tools:ignore="HardcodedText" />
+
+            </LinearLayout>
+
+        </LinearLayout>
 
         <!-- Progress Bar for loading -->
         <ProgressBar

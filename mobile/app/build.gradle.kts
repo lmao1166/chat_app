@@ -83,11 +83,12 @@ dependencies {
     implementation(libs.okhttp.logging)
     implementation(libs.retrofit.kotlinx.serialization)
     implementation(libs.kotlinx.serialization.json)
-    implementation(libs.retrofit.converter.gson)
-
-    // Coroutines
+    implementation(libs.retrofit.converter.gson)    // Coroutines
     implementation(libs.kotlinx.coroutines.core)
     implementation(libs.kotlinx.coroutines.android)
+
+    // Socket.IO for real-time messaging
+    implementation(libs.socket.io.client)
 
     // AndroidX components
     implementation(libs.androidx.fragment.ktx)
