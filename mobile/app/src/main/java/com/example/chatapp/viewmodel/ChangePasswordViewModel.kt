@@ -38,7 +38,7 @@ class ChangePasswordViewModel(private val userRepository: UserRepository) : View
                 } else {
                     // Error case - try to parse error response
                     var errorMessage = "Đã xảy ra lỗi"
-                    
+
                     try {
                         val errorBody = response.errorBody()?.string()
                         if (!errorBody.isNullOrEmpty()) {
@@ -52,7 +52,7 @@ class ChangePasswordViewModel(private val userRepository: UserRepository) : View
                     } catch (parseException: Exception) {
                         errorMessage = getDefaultErrorMessage(response.code())
                     }
-                    
+
                     _uiState.value = _uiState.value.copy(
                         isLoading = false,
                         error = errorMessage

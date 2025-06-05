@@ -1,5 +1,6 @@
 package com.example.chatapp.ui.home.contacts
 
+import android.annotation.SuppressLint
 import android.view.LayoutInflater
 import android.view.ViewGroup
 import androidx.recyclerview.widget.DiffUtil
@@ -33,6 +34,7 @@ class ContactsAdapter(
         private val binding: ItemContactBinding
     ) : RecyclerView.ViewHolder(binding.root) {
 
+        @SuppressLint("SetTextI18n")
         fun bind(user: UserResponse) {
             binding.apply {
                 contactName.text = user.username ?: "Unknown User"

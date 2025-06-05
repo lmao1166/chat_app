@@ -148,7 +148,8 @@
                 android:orientation="horizontal"
                 android:paddingHorizontal="12dp"
                 android:paddingVertical="8dp"
-                android:visibility="gone">
+                android:visibility="gone"
+                tools:ignore="UselessParent">
 
                 <TextView
                     android:id="@+id/typingIndicatorText"

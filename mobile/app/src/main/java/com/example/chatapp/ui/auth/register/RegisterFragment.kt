@@ -48,12 +48,6 @@ class RegisterFragment : Fragment() {
             validateAndRegister()
         }
 
-        // Sự kiện click nút trở về
-        binding.returnButton.setOnClickListener {
-            // Quay lại màn hình trước đó
-            requireActivity().supportFragmentManager.popBackStack()
-        }
-
         // Sự kiện click vào đường dẫn đến trang đăng nhập
         binding.goLoginScreen.setOnClickListener {
             // Chuyển đến fragment đăng nhập
