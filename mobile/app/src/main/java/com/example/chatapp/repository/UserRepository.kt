@@ -29,7 +29,7 @@ class UserRepository {
         return RetrofitInstance.userApi.getAllUsers()
     }
 
-    suspend fun findUserById(userId: String): Response<ApiResponse<UserResponse>> {
+    suspend fun findUserById(userId: Int): Response<ApiResponse<UserResponse>> {
         return RetrofitInstance.userApi.findUserById(userId)
     }
 }

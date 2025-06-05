@@ -2,7 +2,6 @@ package com.example.chatapp.ui.home.contacts.profile
 
 import android.annotation.SuppressLint
 import android.os.Bundle
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -14,19 +13,18 @@ import com.example.chatapp.R
 import com.example.chatapp.databinding.FragmentUserProfileBinding
 import com.example.chatapp.model.response.UserResponse
 import com.example.chatapp.ui.home.chat.ChatFragment
-import com.example.chatapp.ui.home.HomeFragment
 import com.squareup.picasso.Picasso
 
 class UserProfileFragment : Fragment() {
 
     private lateinit var binding: FragmentUserProfileBinding
     private lateinit var viewModel: UserProfileViewModel
-    private var userId: String? = null
+    private var userId: Int? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         arguments?.let {
-            userId = it.getString("userId")
+            userId = it.getInt("userId")
         }
     }
 
@@ -118,41 +116,56 @@ class UserProfileFragment : Fragment() {
     private fun navigateToChat() {
         val userData = viewModel.userData.value ?: return
 
-        // Highlight the chat button to provide visual feedback
+        // Show loading state
         binding.chatButton.isEnabled = false  // Temporarily disable to prevent multiple clicks
         binding.chatButton.alpha = 0.7f  // Reduce opacity to show it's been clicked
-        binding.chatButton.setBackgroundColor(resources.getColor(R.color.green, null))  // Change background color to green
-        binding.chatButton.text = "Đang trò chuyện..."  // Update button text
+        binding.chatButton.text = "Đang kết nối..."  // Update button text to show loading state
 
-        // Create and navigate to chat fragment
-        val chatRoomFragment = ChatFragment()
-        val bundle = Bundle().apply {
-            putString("userId", userData.id.toString())
-            putString("userName", userData.username)
-            putString("userAvatar", userData.profilePicUrl)
-            putBoolean("isDirectChat", true)  // Flag to indicate this is a direct chat from profile
+        // Call API to get or create conversation
+        viewModel.getOrCreateConversation(userData.id ?: return)
+
+        // Observe conversation result
+        viewModel.conversation.observe(viewLifecycleOwner) { conversation ->
+            // Navigate to chat with the conversation ID
+            val chatRoomFragment = ChatFragment()
+            val bundle = Bundle().apply {
+                putInt("conversationId", conversation.id)
+                putString("conversationType", conversation.type)
+                putString("conversationName", conversation.name ?: userData.username)
+                putString("conversationThumbnail", conversation.thumbnail ?: userData.profilePicUrl)
+                putBoolean("isDirectChat", true)
+            }
+            chatRoomFragment.arguments = bundle
+
+            // Navigate to chat fragment
+            requireActivity().supportFragmentManager.beginTransaction()
+                .replace(R.id.fragmentContainer, chatRoomFragment)
+                .addToBackStack("chatRoom")
+                .commit()
         }
-        chatRoomFragment.arguments = bundle
 
-        // Find the parent HomeFragment to highlight the chat menu button
-        requireActivity().supportFragmentManager.fragments.forEach { fragment ->
-            if (fragment is HomeFragment) {
-                // Highlight the chat navigation item
-                fragment.selectNavigationItem(R.id.nav_chat)
+        // Observe loading state
+        viewModel.isConversationLoading.observe(viewLifecycleOwner) { isLoading ->
+            binding.chatButton.text = if (isLoading) "Đang kết nối..." else "Nhắn tin"
+        }
+
+        // Observe error state
+        viewModel.conversationError.observe(viewLifecycleOwner) { error ->
+            if (error.isNotEmpty()) {
+                Toast.makeText(requireContext(), error, Toast.LENGTH_SHORT).show()
+                // Reset button state
+                binding.chatButton.isEnabled = true
+                binding.chatButton.alpha = 1.0f
+                binding.chatButton.text = "Nhắn tin"
             }
         }
-
-        requireActivity().supportFragmentManager.beginTransaction()
-            .replace(R.id.fragmentContainer, chatRoomFragment)
-            .addToBackStack("chatRoom")  // Named backstack entry for better navigation
-            .commit()
     }
 
     companion object {
-        fun newInstance(userId: String): UserProfileFragment {
+        fun newInstance(userId: Int): UserProfileFragment {
             val fragment = UserProfileFragment()
             val args = Bundle().apply {
-                putString("userId", userId)
+                putInt("userId", userId)
             }
             fragment.arguments = args
             return fragment

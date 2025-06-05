@@ -85,7 +85,7 @@ class ChatViewModel : ViewModel() {
                         _currentConversation.value = apiResponse.data
 
                         // Load messages for this conversation
-                        loadMessages(apiResponse.data.id.toString())
+                        loadMessages(apiResponse.data.id)
                     } else {
                         _error.value = apiResponse?.message ?: "Unknown error"
                         _isLoading.value = false
@@ -106,13 +106,13 @@ class ChatViewModel : ViewModel() {
      * Loads messages for a specific conversation
      * @param conversationId ID of the conversation
      */
-    fun loadMessages(conversationId: String) {
+    fun loadMessages(conversationId: Comparable<*>?) {
         viewModelScope.launch {
             _isLoading.value = true
             _error.value = ""
 
             try {
-                val response = messageRepository.getMessagesByConversationId(conversationId)
+                val response = messageRepository.getMessagesByConversationId(conversationId.toString())
 
                 if (response.isSuccessful) {
                     val apiResponse = response.body()
@@ -138,12 +138,12 @@ class ChatViewModel : ViewModel() {
      * @param conversationId ID of the conversation
      * @param content Message content
      */
-    fun sendMessage(conversationId: String, content: String) {
+    fun sendMessage(conversationId: Comparable<*>?, content: String) {
         if (content.isBlank()) return
 
         viewModelScope.launch {
             try {
-                val response = messageRepository.sendMessage(conversationId, content)
+                val response = messageRepository.sendMessage(conversationId.toString(), content)
 
                 if (response.isSuccessful) {
                     val apiResponse = response.body()

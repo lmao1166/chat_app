@@ -159,7 +159,7 @@ class ContactsFragment : Fragment() {
     private fun navigateToChat(user: UserResponse) {
         val chatFragment = ChatFragment()
         val bundle = Bundle().apply {
-            putString("userId", user.id.toString())
+            putInt("userId", user.id ?: return)
             putString("userName", user.username)
             putString("userAvatar", user.profilePicUrl)
             putBoolean("isDirectChat", true)  // Add flag to use chat room layout
@@ -180,7 +180,7 @@ class ContactsFragment : Fragment() {
     }
 
     private fun navigateToUserProfile(user: UserResponse) {
-        val userProfileFragment = UserProfileFragment.newInstance(user.id.toString())
+        val userProfileFragment = UserProfileFragment.newInstance(user.id ?: return)
 
         requireActivity().supportFragmentManager.beginTransaction()
             .replace(R.id.fragmentContainer, userProfileFragment)

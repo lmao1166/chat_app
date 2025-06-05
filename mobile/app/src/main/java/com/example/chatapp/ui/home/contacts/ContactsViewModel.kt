@@ -8,15 +8,15 @@ import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.viewModelScope
 import com.example.chatapp.model.response.UserResponse
 import com.example.chatapp.repository.UserRepository
+import com.example.chatapp.repository.AuthRepository
 import kotlinx.coroutines.launch
-import retrofit2.HttpException
-import java.io.IOException
 
 class ContactsViewModel(application: Application) : AndroidViewModel(application) {
     private val userRepository = UserRepository()
-    
+    private val authRepository = AuthRepository()
+
     private val _contacts = MutableLiveData<List<UserResponse>>()
-    val contacts: LiveData<List<UserResponse>> = _contacts
+//    val contacts: LiveData<List<UserResponse>> = _contacts
     
     private val _isLoading = MutableLiveData<Boolean>()
     val isLoading: LiveData<Boolean> = _isLoading
@@ -28,12 +28,20 @@ class ContactsViewModel(application: Application) : AndroidViewModel(application
     val filteredContacts: LiveData<List<UserResponse>> = _filteredContacts
     
     private var originalContacts: List<UserResponse> = emptyList()
-    
+    private var currentUserId: Int? = null
+
     fun loadContacts() {
         viewModelScope.launch {
             _isLoading.value = true
             _error.value = "" // Clear previous errors
             try {
+                // Get current user first
+                val currentUserResponse = authRepository.getCurrentUser()
+                if (currentUserResponse.isSuccessful && currentUserResponse.body()?.success == true) {
+                    currentUserId = currentUserResponse.body()?.data?.id?.toInt()
+                    Log.d("ContactsViewModel", "Current user ID: $currentUserId")
+                }
+
                 Log.d("ContactsViewModel", "Starting to load contacts...")
                 val response = userRepository.getAllUsers()
                 Log.d("ContactsViewModel", "Response received: isSuccessful=${response.isSuccessful}, code=${response.code()}")
@@ -43,7 +51,12 @@ class ContactsViewModel(application: Application) : AndroidViewModel(application
                     Log.d("ContactsViewModel", "API Response: $apiResponse")
 
                     if (apiResponse != null) {
-                        val users = apiResponse.data ?: emptyList()
+                        // Filter out current user from contacts list
+                        var users = apiResponse.data ?: emptyList()
+                        if (currentUserId != null) {
+                            users = users.filter { it.id?.toInt() != currentUserId }
+                        }
+
                         Log.d("ContactsViewModel", "Users received: ${users.size}")
                         users.forEachIndexed { index, user ->
                             Log.d("ContactsViewModel", "User $index - ID: ${user.id}, Username: ${user.username}, Email: ${user.email}")

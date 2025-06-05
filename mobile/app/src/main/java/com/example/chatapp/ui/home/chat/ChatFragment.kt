@@ -14,18 +14,19 @@ import com.example.chatapp.R
 import com.example.chatapp.databinding.FragmentChatBinding
 import com.example.chatapp.databinding.FragmentChatRoomBinding
 import com.example.chatapp.model.response.ConversationResponse
-import com.example.chatapp.model.response.MessageResponse
 import com.example.chatapp.utils.TokenManager
 
 class ChatFragment : Fragment() {
     private var _binding: Any? = null
     private var _chatRoomBinding: FragmentChatRoomBinding? = null
     private val isDirectChat by lazy { arguments?.getBoolean("isDirectChat", false) ?: false }
-    private val userId by lazy { arguments?.getString("userId") }
+    private val userId by lazy { arguments?.getInt("userId", -1) }
     private val userName by lazy { arguments?.getString("userName") }
     private val userAvatar by lazy { arguments?.getString("userAvatar") }
-    private val conversationId by lazy { arguments?.getString("conversationId") }
-    
+    private val conversationId by lazy { arguments?.getInt("conversationId", -1) }
+    private val conversationName by lazy { arguments?.getString("conversationName") }
+    private val conversationThumbnail by lazy { arguments?.getString("conversationThumbnail") }
+
     private lateinit var conversationAdapter: ConversationAdapter
     private lateinit var messageAdapter: MessageAdapter
     private lateinit var viewModel: ChatViewModel
@@ -122,10 +123,10 @@ class ChatFragment : Fragment() {
         // Navigate to chat room
         val bundle = Bundle().apply {
             putBoolean("isDirectChat", true)
-            putString("userId", otherMember?.id.toString())
+            putInt("userId", otherMember?.id?.toInt() ?: -1)
             putString("userName", otherMember?.username)
             putString("userAvatar", otherMember?.profilePicUrl)
-            putString("conversationId", conversation.id.toString())
+            putInt("conversationId", conversation.id.toInt())
         }
         
         val chatRoomFragment = ChatFragment().apply {
@@ -143,14 +144,15 @@ class ChatFragment : Fragment() {
         // Store binding reference for later use
         _chatRoomBinding = binding
         
-        // Setup chat room UI with user data
-        binding.contactName.text = userName ?: "Chat"
+        // Setup chat room UI with user data - prefer conversationName over userName
+        binding.contactName.text = conversationName ?: userName ?: "Chat"
 
-        // Load user avatar if available
-        userAvatar?.let { avatarUrl ->
-            if (avatarUrl.isNotEmpty()) {
+        // Load user avatar if available - prefer conversationThumbnail over userAvatar
+        val avatarUrl = conversationThumbnail ?: userAvatar
+        avatarUrl?.let { url ->
+            if (url.isNotEmpty()) {
                 com.squareup.picasso.Picasso.get()
-                    .load(avatarUrl)
+                    .load(url)
                     .placeholder(R.drawable.default_avatar)
                     .error(R.drawable.default_avatar)
                     .into(binding.contactImage)
@@ -258,7 +260,7 @@ class ChatFragment : Fragment() {
 
     private fun sendMessage(message: String) {
         // Get the conversation ID - either directly or from the ViewModel's current conversation
-        val activeConversationId = conversationId ?: viewModel.currentConversation.value?.id?.toString()
+        val activeConversationId = conversationId ?: viewModel.currentConversation.value?.id
 
         if (activeConversationId != null) {
             viewModel.sendMessage(activeConversationId, message)

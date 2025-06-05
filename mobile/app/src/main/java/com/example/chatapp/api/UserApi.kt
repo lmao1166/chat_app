@@ -32,7 +32,7 @@ interface UserApi {
     suspend fun changePassword(@Body changePasswordRequest: ChangePasswordRequest): Response<ApiResponse<UserResponse>>
 
     @GET("api/v1/users/{id}")
-    suspend fun findUserById(@Path("id") id: String): Response<ApiResponse<UserResponse>>
+    suspend fun findUserById(@Path("id") id: Int): Response<ApiResponse<UserResponse>>
 
     @GET("api/v1/users")
     suspend fun getAllUsers(): Response<ApiResponse<List<UserResponse>>>
