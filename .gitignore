@@ -9445,8 +9445,8 @@ backend/node_modules/yocto-queue/index.js
 backend/node_modules/yocto-queue/license
 backend/node_modules/yocto-queue/package.json
 backend/node_modules/yocto-queue/readme.md
-backend/sample.env
+backend/.env
 backend/package-lock.json
 backend/package.json
 backend/node_modules/
-backend\uploads
+backend/uploads

@@ -67,7 +67,8 @@
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        app:tint="@color/blue" />
+        app:tint="@color/blue"
+        tools:ignore="HardcodedText" />
 
     <View
         android:layout_width="0dp"

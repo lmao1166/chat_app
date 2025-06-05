@@ -73,7 +73,7 @@ class ProfileFragment : Fragment() {
                         }
 
                         // Thêm logging cho Picasso
-                        Picasso.get().setLoggingEnabled(true)
+                        Picasso.get().isLoggingEnabled = true
 
                         // Tải ảnh với cài đặt cơ bản trước
                         Picasso.get()
@@ -182,3 +182,4 @@ class ProfileFragment : Fragment() {
         viewModel.fetchUserProfile()
     }
 }
+

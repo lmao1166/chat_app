@@ -15,6 +15,7 @@ import com.example.chatapp.R
 import com.example.chatapp.databinding.FragmentContactsBinding
 import com.example.chatapp.model.response.UserResponse
 import com.example.chatapp.ui.home.chat.ChatFragment
+import com.example.chatapp.ui.home.contacts.profile.UserProfileFragment
 
 class ContactsFragment : Fragment() {
     private lateinit var binding: FragmentContactsBinding
@@ -51,10 +52,15 @@ class ContactsFragment : Fragment() {
     }
 
     private fun setupRecyclerView() {
-        contactsAdapter = ContactsAdapter { user ->
-            navigateToChat(user)
-        }
-        
+        contactsAdapter = ContactsAdapter(
+            onProfileClick = { user ->
+                navigateToUserProfile(user)
+            },
+            onChatClick = { user ->
+                navigateToChat(user)
+            }
+        )
+
         binding.contactsRecyclerView.apply {
             adapter = contactsAdapter
             layoutManager = LinearLayoutManager(requireContext())
@@ -156,10 +162,28 @@ class ContactsFragment : Fragment() {
             putString("userId", user.id.toString())
             putString("userName", user.username)
             putString("userAvatar", user.profilePicUrl)
+            putBoolean("isDirectChat", true)  // Add flag to use chat room layout
         }
         chatFragment.arguments = bundle
-          this.parentFragmentManager.beginTransaction()
+
+        // Highlight the chat button in the navigation menu
+        requireActivity().supportFragmentManager.fragments.forEach { fragment ->
+            if (fragment is com.example.chatapp.ui.home.HomeFragment) {
+                fragment.selectNavigationItem(R.id.nav_chat)
+            }
+        }
+
+        this.parentFragmentManager.beginTransaction()
             .replace(R.id.fragmentContainer, chatFragment)
+            .addToBackStack("chatRoom")  // Named backstack entry for better navigation
+            .commit()
+    }
+
+    private fun navigateToUserProfile(user: UserResponse) {
+        val userProfileFragment = UserProfileFragment.newInstance(user.id.toString())
+
+        requireActivity().supportFragmentManager.beginTransaction()
+            .replace(R.id.fragmentContainer, userProfileFragment)
             .addToBackStack(null)
             .commit()
     }

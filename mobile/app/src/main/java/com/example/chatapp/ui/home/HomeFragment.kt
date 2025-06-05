@@ -56,4 +56,9 @@ class HomeFragment : Fragment() {
             .replace(R.id.fragmentContainer, fragment)
             .commit()
     }
+
+    // Method to highlight a specific navigation item
+    fun selectNavigationItem(itemId: Int) {
+        binding.bottomNavigation.selectedItemId = itemId
+    }
 }

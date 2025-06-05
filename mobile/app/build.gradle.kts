@@ -3,7 +3,7 @@ plugins {
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
     id("kotlin-kapt")
-    id("org.jetbrains.kotlin.plugin.serialization") version "2.0.21"
+    alias(libs.plugins.kotlin.serialization)
 }
 
 android {
@@ -45,7 +45,6 @@ android {
 }
 
 dependencies {
-
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.activity.compose)
@@ -67,55 +66,29 @@ dependencies {
     androidTestImplementation(libs.androidx.ui.test.junit4)
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
-    implementation (libs.androidx.constraintlayout)
 
+    // CircleImageView library
+    implementation(libs.circleimageview)
 
-    //noinspection UseTomlInstead
-    implementation ("androidx.recyclerview:recyclerview:1.4.0")
-    //noinspection UseTomlInstead
-    implementation ("com.google.android.material:material:1.12.0")
-    // Retrofit
-    //noinspection UseTomlInstead
-    implementation ("com.squareup.retrofit2:retrofit:2.11.0")
-    //noinspection UseTomlInstead
-    implementation("com.squareup.okhttp3:okhttp:4.12.0")
-    //noinspection UseTomlInstead
-    implementation("com.squareup.okhttp3:logging-interceptor:4.12.0")
-    //noinspection UseTomlInstead
-    implementation("com.jakewharton.retrofit:retrofit2-kotlinx-serialization-converter:1.0.0")
-    // Converter cho JSON (Gson)
-    //noinspection UseTomlInstead
-    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.7.3")
-    //noinspection UseTomlInstead
-    implementation ("com.squareup.retrofit2:converter-gson:2.11.0")
-    // OkHttp (Thường được Retrofit sử dụng nội bộ)
-    //noinspection UseTomlInstead
-    implementation ("com.squareup.okhttp3:okhttp:4.12.0")
-    //noinspection UseTomlInstead
-    implementation ("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.10.2") // hoặc phiên bản mới nhất
-    //noinspection UseTomlInstead
-    implementation ("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.10.2")
-    //noinspection UseTomlInstead
-    implementation("androidx.fragment:fragment-ktx:1.8.7")
-    //noinspection UseTomlInstead
-    implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.9.0")// Thay bằng phiên bản mới nhất
-    implementation (libs.circleimageview)
-    //noinspection GradleDependency,UseTomlInstead
-    implementation("androidx.navigation:navigation-fragment-ktx:2.7.7")
-    //noinspection GradleDependency,UseTomlInstead
-    implementation("androidx.navigation:navigation-ui-ktx:2.7.")
-    //noinspection UseTomlInstead
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.10.2")
-    //noinspection UseTomlInstead
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.10.2")
+    // Additional dependencies using version catalog
+    implementation(libs.androidx.recyclerview)
+    implementation(libs.material)
 
-    // Picasso for image loading
-    //noinspection UseTomlInstead
-    implementation("com.squareup.picasso:picasso:2.8")
+    // Picasso image loading library
+    implementation(libs.picasso)
 
-    // Circle ImageView
-    //noinspection UseTomlInstead
-    implementation("de.hdodenhof:circleimageview:3.1.0")
+    // Retrofit & Networking
+    implementation(libs.retrofit.core)
+    implementation(libs.okhttp.core)
+    implementation(libs.okhttp.logging)
+    implementation(libs.retrofit.kotlinx.serialization)
+    implementation(libs.kotlinx.serialization.json)
+    implementation(libs.retrofit.converter.gson)
 
+    // Coroutines
+    implementation(libs.kotlinx.coroutines.core)
+    implementation(libs.kotlinx.coroutines.android)
+
+    // AndroidX components
+    implementation(libs.androidx.fragment.ktx)
 }
-

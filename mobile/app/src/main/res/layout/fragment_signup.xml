@@ -225,7 +225,8 @@
                         android:layout_height="wrap_content"
                         android:textSize="14sp"
                         android:textColor="@color/blue"
-                        android:text="@string/sign_in"/>
+                        android:text=" Đăng nhập"
+                        tools:ignore="HardcodedText" />
 
                     <ProgressBar
                         android:id="@+id/progressBar"

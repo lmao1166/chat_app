@@ -7,11 +7,13 @@ import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.example.chatapp.databinding.ItemContactBinding
 import com.example.chatapp.model.response.UserResponse
-import com.squareup.picasso.Picasso
+//import com.squareup.picasso.Picasso
 import com.example.chatapp.R
+import com.squareup.picasso.Picasso
 
 class ContactsAdapter(
-    private val onContactClick: (UserResponse) -> Unit
+    private val onProfileClick: (UserResponse) -> Unit,
+    private val onChatClick: (UserResponse) -> Unit
 ) : ListAdapter<UserResponse, ContactsAdapter.ContactViewHolder>(ContactDiffCallback()) {
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ContactViewHolder {
@@ -35,7 +37,7 @@ class ContactsAdapter(
             binding.apply {
                 contactName.text = user.username ?: "Unknown User"
                 contactStatus.text = "Offline" // You can implement online status later
-                
+
                 // Load profile image
                 if (!user.profilePicUrl.isNullOrEmpty()) {
                     Picasso.get()
@@ -49,13 +51,14 @@ class ContactsAdapter(
                     contactImage.setImageResource(R.drawable.default_avatar)
                 }
 
-                // Handle click events
+                // Handle click events - view profile when clicking on the contact
                 root.setOnClickListener {
-                    onContactClick(user)
+                    onProfileClick(user)
                 }
 
+                // Chat button leads to chat room
                 contactActionButton.setOnClickListener {
-                    onContactClick(user)
+                    onChatClick(user)
                 }
             }
         }
