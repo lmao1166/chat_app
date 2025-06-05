@@ -99,9 +99,9 @@
                 android:layout_marginHorizontal="32dp"
                 android:layout_marginTop="8dp"
                 android:gravity="center"
-                android:text="Bắt đầu trò chuyện mới với bạn bè"
+                android:text="Bắt đầu trò chuyện với người dùng khác ngay bây giờ"
                 android:textColor="#6C757D"
-                android:textSize="16sp"
+                android:textSize="14sp"
                 tools:ignore="HardcodedText" />
 
             <com.google.android.material.button.MaterialButton
@@ -110,47 +110,28 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="24dp"
                 android:backgroundTint="@color/blue"
-                android:paddingHorizontal="20dp"
+                android:paddingHorizontal="32dp"
                 android:paddingVertical="12dp"
-                android:text="Trò chuyện mới"
-                android:textSize="14sp"
+                android:text="Bắt đầu trò chuyện"
+                android:textSize="16sp"
                 app:cornerRadius="24dp"
-                app:elevation="2dp"
-                app:icon="@drawable/ic_add"
+                app:icon="@drawable/ic_chat"
                 app:iconGravity="textStart"
                 app:iconPadding="8dp"
                 tools:ignore="HardcodedText" />
+
         </LinearLayout>
 
-        <!-- Floating Action Button with improved styling -->
-<!--        <com.google.android.material.floatingactionbutton.FloatingActionButton
-            android:id="@+id/fabNewChat"
+        <!-- Progress Bar for loading -->
+        <ProgressBar
+            android:id="@+id/progressBar"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_margin="16dp"
-            android:backgroundTint="@color/blue"
-            android:contentDescription="New Chat"
-            android:elevation="8dp"
-            android:src="@drawable/ic_add"
-            app:borderWidth="0dp"
-            app:layout_constraintBottom_toTopOf="@+id/bottomNavigation"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:tint="@color/white" /> -->
-
-        <!-- Bottom Navigation with elevated design -->
-<!--        <com.google.android.material.bottomnavigation.BottomNavigationView
-            android:id="@+id/bottomNavigation"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:background="@color/white"
-            android:elevation="12dp"
-            app:itemIconTint="@color/bottom_nav_item_color"
-            app:itemRippleColor="#E3F2FD"
-            app:itemTextColor="@color/bottom_nav_item_color"
+            android:visibility="gone"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:menu="@menu/bottom_navigation_menu" /> -->
+            app:layout_constraintTop_toTopOf="parent" />
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 </layout>

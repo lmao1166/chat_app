@@ -1,6 +1,9 @@
 package com.example.chatapp.model.request
 
-class MessageRequest {
-    private var content: String? = null
-    private var conversation_id:Long? = null
-}
+import com.google.gson.annotations.SerializedName
+
+data class MessageRequest(
+    val content: String,
+    @SerializedName("conversation_id")
+    val conversationId: Int
+)

@@ -8,18 +8,14 @@ import android.view.ViewGroup
 import android.widget.Toast
 import androidx.databinding.DataBindingUtil
 import androidx.fragment.app.Fragment
-import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.ViewModelProvider
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.chatapp.R
-import com.example.chatapp.RetrofitInstance
 import com.example.chatapp.databinding.FragmentChatBinding
 import com.example.chatapp.databinding.FragmentChatRoomBinding
 import com.example.chatapp.model.response.ConversationResponse
-import com.example.chatapp.model.request.ConversationRequest
-import com.example.chatapp.model.response.ApiResponse
 import com.example.chatapp.model.response.MessageResponse
 import com.example.chatapp.utils.TokenManager
-import kotlinx.coroutines.launch
 
 class ChatFragment : Fragment() {
     private var _binding: Any? = null
@@ -32,12 +28,16 @@ class ChatFragment : Fragment() {
     
     private lateinit var conversationAdapter: ConversationAdapter
     private lateinit var messageAdapter: MessageAdapter
+    private lateinit var viewModel: ChatViewModel
 
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
+        // Initialize ViewModel
+        viewModel = ViewModelProvider(this)[ChatViewModel::class.java]
+
         return if (isDirectChat) {
             // This is a direct chat initiated from user profile - use chat_room layout
             val chatRoomBinding = DataBindingUtil.inflate<FragmentChatRoomBinding>(
@@ -68,44 +68,36 @@ class ChatFragment : Fragment() {
             adapter = conversationAdapter
         }
         
+        // Observe ViewModel data
+        setupConversationObservers(binding)
+
         // Load conversations
-        loadConversations(binding)
+        viewModel.loadConversations()
     }
     
-    private fun loadConversations(binding: FragmentChatBinding) {
-        TokenManager.getInstance(requireContext())
+    private fun setupConversationObservers(binding: FragmentChatBinding) {
+        // Observe loading state
+        viewModel.isLoading.observe(viewLifecycleOwner) { isLoading ->
+            binding.progressBar.visibility = if (isLoading) View.VISIBLE else View.GONE
+        }
 
-        // Update Retrofit with current token
-        RetrofitInstance.updateWithToken(requireContext())
-        
-        lifecycleScope.launch {
-            try {
+        // Observe error state
+        viewModel.error.observe(viewLifecycleOwner) { error ->
+            if (error.isNotEmpty()) {
+                Toast.makeText(context, error, Toast.LENGTH_LONG).show()
+                showEmptyState(binding)
+            }
+        }
+
+        // Observe conversations data
+        viewModel.conversations.observe(viewLifecycleOwner) { conversations ->
+            if (conversations.isEmpty()) {
+                showEmptyState(binding)
+            } else {
                 binding.emptyStateView.visibility = View.GONE
                 binding.conversationsRecyclerView.visibility = View.VISIBLE
-                
-                val response = RetrofitInstance.conversationApi.getConversations()
-                
-                if (response.isSuccessful) {
-                    val apiResponse = response.body()
-                    if (apiResponse?.success == true) {
-                        val conversations = apiResponse.data ?: emptyList()
-                        if (conversations.isEmpty()) {
-                            showEmptyState(binding)
-                        } else {
-                            conversationAdapter.submitList(conversations)
-                        }
-                        Log.d("ChatFragment", "Loaded ${conversations.size} conversations")
-                    } else {
-                        Log.e("ChatFragment", "API call failed: ${apiResponse?.message}")
-                        showEmptyState(binding)
-                    }
-                } else {
-                    Log.e("ChatFragment", "HTTP error: ${response.code()} - ${response.message()}")
-                    showEmptyState(binding)
-                }
-            } catch (e: Exception) {
-                Log.e("ChatFragment", "Error loading conversations", e)
-                showEmptyState(binding)
+                conversationAdapter.submitList(conversations)
+                Log.d("ChatFragment", "Loaded ${conversations.size} conversations")
             }
         }
     }
@@ -120,7 +112,8 @@ class ChatFragment : Fragment() {
             Log.d("ChatFragment", "New chat button clicked")
         }
     }
-      private fun onConversationClick(conversation: ConversationResponse) {
+
+    private fun onConversationClick(conversation: ConversationResponse) {
         Log.d("ChatFragment", "Conversation clicked: ${conversation.id}")
         
         // Get the other member info
@@ -141,10 +134,12 @@ class ChatFragment : Fragment() {
         
         // Use activity's fragment manager to replace the entire home fragment
         requireActivity().supportFragmentManager.beginTransaction()
-            .replace(R.id.fragment_container, chatRoomFragment)
-            .addToBackStack("chat_room")
+            .replace(R.id.fragmentContainer, chatRoomFragment)
+            .addToBackStack("chatRoom")
             .commit()
-    }    private fun setupChatRoomUI(binding: FragmentChatRoomBinding) {
+    }
+
+    private fun setupChatRoomUI(binding: FragmentChatRoomBinding) {
         // Store binding reference for later use
         _chatRoomBinding = binding
         
@@ -173,16 +168,16 @@ class ChatFragment : Fragment() {
         setupMessageList(binding)
 
         // Configure chat functionality with the user ID
-        userId?.let {
-            // Load chat history with this user
-            loadChatHistory()
-        }
+        setupMessageObservers(binding)
+
+        // Load chat history
+        loadChatHistory()
 
         // Initialize message sending functionality
         binding.sendButton.setOnClickListener {
             val message = binding.messageInput.text.toString().trim()
             if (message.isNotEmpty()) {
-                sendMessage(message, userId ?: "")
+                sendMessage(message)
                 binding.messageInput.text?.clear()
             }
         }
@@ -196,7 +191,33 @@ class ChatFragment : Fragment() {
         binding.menuButton.setOnClickListener {
             // TODO: Show chat options menu
         }
-    }    private fun setupMessageList(binding: FragmentChatRoomBinding) {
+    }
+
+    private fun setupMessageObservers(binding: FragmentChatRoomBinding) {
+        // Observe loading state
+        viewModel.isLoading.observe(viewLifecycleOwner) { isLoading ->
+            binding.progressBar.visibility = if (isLoading) View.VISIBLE else View.GONE
+        }
+
+        // Observe error state
+        viewModel.error.observe(viewLifecycleOwner) { error ->
+            if (error.isNotEmpty()) {
+                Toast.makeText(context, error, Toast.LENGTH_SHORT).show()
+            }
+        }
+
+        // Observe messages
+        viewModel.messages.observe(viewLifecycleOwner) { messages ->
+            messageAdapter.submitList(messages)
+
+            // Scroll to bottom after loading messages
+            if (messages.isNotEmpty()) {
+                binding.messagesRecyclerView.scrollToPosition(messages.size - 1)
+            }
+        }
+    }
+
+    private fun setupMessageList(binding: FragmentChatRoomBinding) {
         // Get current user ID
         val tokenManager = TokenManager.getInstance(requireContext())
         val currentUserId = tokenManager.getUserId() ?: ""
@@ -215,131 +236,39 @@ class ChatFragment : Fragment() {
         }
     }
 
-    // Main entry point for loading chat history
     private fun loadChatHistory() {
-        when {
-            conversationId != null -> {
-                // Case 1: We have a conversation ID, load messages directly
-                loadMessagesForConversation(conversationId!!)
-            }
-            userId != null -> {
-                // Case 2: No conversation ID but we have a userId - create or get conversation first
-                findOrCreateConversation(userId!!)
-            }
-            else -> {
-                // Case 3: Neither conversation ID nor user ID available
-                Log.e("ChatFragment", "Cannot load messages - no conversation ID or user ID")
-                showEmptyChat("Không thể xác định người nhận tin nhắn")
-            }
-        }
-    }
-
-    // Step 1: Find or create a conversation with the specified user
-    private fun findOrCreateConversation(targetUserId: String) {
-        lifecycleScope.launch {
+        if (conversationId != null) {
+            // Case 1: We have a conversation ID, load messages directly
+            viewModel.loadMessages(conversationId!!)
+        } else if (userId != null) {
+            // Case 2: No conversation ID but we have a userId - create or get conversation first
             try {
-                showLoading(true)
-                Log.d("ChatFragment", "Finding or creating conversation with user: $targetUserId")
-
-                // Create proper request body with the target user ID
-                val request = ConversationRequest(targetUserId.toInt())
-
-                // Attempt to get or create conversation for this user
-                val response = RetrofitInstance.conversationApi.getOrCreateConversation(request)
-                handleFindConversationResponse(response)
-            } catch (e: Exception) {
-                handleError(e, "Error creating/finding conversation", "Đã xảy ra lỗi khi tải tin nhắn")
-                showLoading(false)
-            }
-        }
-    }
-
-    // Step 2: Handle the API response from finding/creating a conversation
-    private fun handleFindConversationResponse(response: retrofit2.Response<ApiResponse<ConversationResponse>>) {
-        if (response.isSuccessful) {
-            val apiResponse = response.body()
-            if (apiResponse?.success == true && apiResponse.data != null) {
-                // We got a conversation - now load messages
-                val newConversationId = apiResponse.data.id.toString()
-                Log.d("ChatFragment", "Got conversation ID: $newConversationId")
-                loadMessagesForConversation(newConversationId)
-            } else {
-                Log.e("ChatFragment", "Failed to get/create conversation: ${apiResponse?.message}")
-                showEmptyChat("Không thể tải tin nhắn. Vui lòng thử lại sau.")
-                showLoading(false)
+                val userIdInt = userId!!.toInt()
+                viewModel.loadOrCreateConversation(userIdInt)
+            } catch (e: NumberFormatException) {
+                Log.e("ChatFragment", "Invalid user ID: $userId")
+                showEmptyChat("ID người dùng không hợp lệ")
             }
         } else {
-            Log.e("ChatFragment", "HTTP error: ${response.code()} - ${response.message()}")
-            showEmptyChat("Lỗi kết nối: ${response.code()}")
-            showLoading(false)
+            // Case 3: Neither conversation ID nor user ID available
+            Log.e("ChatFragment", "Cannot load messages - no conversation ID or user ID")
+            showEmptyChat("Không thể xác định người nhận tin nhắn")
         }
     }
 
-    // Step 3: Load messages for a specific conversation
-    private fun loadMessagesForConversation(convId: String) {
-        lifecycleScope.launch {
-            try {
-                showLoading(true)
-                Log.d("ChatFragment", "Loading chat history for conversation: $convId")
+    private fun sendMessage(message: String) {
+        // Get the conversation ID - either directly or from the ViewModel's current conversation
+        val activeConversationId = conversationId ?: viewModel.currentConversation.value?.id?.toString()
 
-                val response = RetrofitInstance.messageApi.getMessagesByConversationId(convId)
-                handleLoadMessagesResponse(response)
-            } catch (e: Exception) {
-                handleError(e, "Error loading chat history", "Đã xảy ra lỗi khi tải tin nhắn")
-                showLoading(false)
-            }
-        }
-    }
-
-    // Step 4: Handle the API response from loading messages
-    private fun handleLoadMessagesResponse(response: retrofit2.Response<ApiResponse<List<MessageResponse>>>) {
-        showLoading(false)
-
-        if (response.isSuccessful) {
-            val apiResponse = response.body()
-            if (apiResponse?.success == true) {
-                val messages = apiResponse.data ?: emptyList()
-                displayMessages(messages)
-            } else {
-                Log.e("ChatFragment", "API call failed: ${apiResponse?.message}")
-                showEmptyChat("Không thể tải tin nhắn")
-            }
+        if (activeConversationId != null) {
+            viewModel.sendMessage(activeConversationId, message)
         } else {
-            Log.e("ChatFragment", "HTTP error: ${response.code()} - ${response.message()}")
-            showEmptyChat("Lỗi kết nối: ${response.code()}")
+            Log.e("ChatFragment", "Cannot send message - no active conversation")
+            Toast.makeText(context, "Không thể gửi tin nhắn - không có cuộc trò chuyện nào đang hoạt động", Toast.LENGTH_SHORT).show()
         }
     }
 
-    // Step 5: Display the messages in the UI
-    private fun displayMessages(messages: List<MessageResponse>) {
-        messageAdapter.submitList(messages)
-        Log.d("ChatFragment", "Loaded ${messages.size} messages")
-
-        // Scroll to bottom after loading messages
-        if (messages.isNotEmpty()) {
-            _chatRoomBinding?.messagesRecyclerView?.scrollToPosition(messages.size - 1)
-        } else {
-            Log.d("ChatFragment", "No messages in conversation")
-            // This is a valid state - just an empty conversation
-        }
-    }
-
-    // Helper function to handle errors consistently
-    private fun handleError(e: Exception, logMessage: String, userMessage: String) {
-        Log.e("ChatFragment", logMessage, e)
-        showEmptyChat(userMessage)
-    }
-
-    // Helper function to show loading state
-    private fun showLoading(isLoading: Boolean) {
-        _chatRoomBinding?.let { binding ->
-            binding.progressBar.visibility = if (isLoading) View.VISIBLE else View.GONE
-        }
-    }
-
-    private fun sendMessage(message: String, userId: String) {
-        // TODO: Implement sending message to the userId
-    }    // Helper function to show empty chat or error state
+    // Helper function to show empty chat or error state
     private fun showEmptyChat(errorMessage: String) {
         _chatRoomBinding?.let { binding ->
             // Show error message via toast

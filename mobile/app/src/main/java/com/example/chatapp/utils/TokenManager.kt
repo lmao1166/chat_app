@@ -133,7 +133,7 @@ class TokenManager(context: Context) {
             val decodedString = String(decodedBytes)
             val jsonObject = JSONObject(decodedString)
             
-            val userId = jsonObject.optString("userId", null)
+            val userId = jsonObject.optString("userId", null.toString())
             Log.d("TokenManager", "Extracted user ID: $userId")
             userId
         } catch (e: Exception) {
