@@ -123,10 +123,10 @@ class ChatFragment : Fragment() {
         // Navigate to chat room
         val bundle = Bundle().apply {
             putBoolean("isDirectChat", true)
-            putInt("userId", otherMember?.id?.toInt() ?: -1)
+            putInt("userId", otherMember?.id ?: -1)
             putString("userName", otherMember?.username)
             putString("userAvatar", otherMember?.profilePicUrl)
-            putInt("conversationId", conversation.id.toInt())
+            putInt("conversationId", conversation.id)
         }
         
         val chatRoomFragment = ChatFragment().apply {
