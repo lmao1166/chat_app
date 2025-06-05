@@ -1,11 +1,11 @@
-const conservationService = require('../services/conversation.service');
+const conversationService = require('../services/conversation.service');
 
 class ConservationController {
     async findOrCreateConversation(req, res, next) {
         try {
             const memberData = req.body;
             const userId = req.user.userId;
-            const conversation = await conservationService.findOrCreateConversation(memberData, userId);
+            const conversation = await conversationService.findOrCreateConversation(memberData, userId);
 
             res.status(200).json({
                 status: 200,
@@ -21,7 +21,7 @@ class ConservationController {
     async getConversationById(req, res, next) {
         try {
             const conversationId = req.params.id;
-            const conversation = await conservationService.getConversationById(conversationId);
+            const conversation = await conversationService.getConversationById(conversationId);
             if (!conversation) {
                 return res.status(404).json({ message: 'Cuộc trò chuyện không tồn tại' });
             }
@@ -38,10 +38,10 @@ class ConservationController {
         }
     }  
 
-    async getConservationsByUserId(req, res, next) {
+    async getConversations(req, res, next) {
         try {
             const userId = req.user.userId;
-            const conversations = await conservationService.getConversationsByUserId(userId);
+            const conversations = await conversationService.getConversationsByUserId(userId);
             res.status(200).json(
                 {
                     status: 200,

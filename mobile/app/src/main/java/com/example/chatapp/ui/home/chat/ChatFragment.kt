@@ -1,14 +1,21 @@
 package com.example.chatapp.ui.home.chat
 
 import android.os.Bundle
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.databinding.DataBindingUtil
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.lifecycleScope
+import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.chatapp.R
+import com.example.chatapp.RetrofitInstance
 import com.example.chatapp.databinding.FragmentChatBinding
 import com.example.chatapp.databinding.FragmentChatRoomBinding
+import com.example.chatapp.model.response.ConversationResponse
+import com.example.chatapp.utils.TokenManager
+import kotlinx.coroutines.launch
 
 class ChatFragment : Fragment() {
     private var _binding: Any? = null
@@ -16,6 +23,8 @@ class ChatFragment : Fragment() {
     private val userId by lazy { arguments?.getString("userId") }
     private val userName by lazy { arguments?.getString("userName") }
     private val userAvatar by lazy { arguments?.getString("userAvatar") }
+    
+    private lateinit var conversationAdapter: ConversationAdapter
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -42,8 +51,92 @@ class ChatFragment : Fragment() {
     }
 
     private fun setupChatListUI(binding: FragmentChatBinding) {
-        // Original chat list implementation
-        // Here you would initialize your chat list, fetch conversations, etc.
+        // Initialize RecyclerView and adapter
+        conversationAdapter = ConversationAdapter { conversation ->
+            onConversationClick(conversation)
+        }
+        
+        binding.conversationsRecyclerView.apply {
+            layoutManager = LinearLayoutManager(context)
+            adapter = conversationAdapter
+        }
+        
+        // Load conversations
+        loadConversations(binding)
+    }
+    
+    private fun loadConversations(binding: FragmentChatBinding) {
+        val tokenManager = TokenManager.getInstance(requireContext())
+        
+        // Update Retrofit with current token
+        RetrofitInstance.updateWithToken(requireContext())
+        
+        lifecycleScope.launch {
+            try {
+                binding.emptyStateView.visibility = View.GONE
+                binding.conversationsRecyclerView.visibility = View.VISIBLE
+                
+                val response = RetrofitInstance.conversationApi.getConversations()
+                
+                if (response.isSuccessful) {
+                    val apiResponse = response.body()
+                    if (apiResponse?.success == true) {
+                        val conversations = apiResponse.data ?: emptyList()
+                        if (conversations.isEmpty()) {
+                            showEmptyState(binding)
+                        } else {
+                            conversationAdapter.submitList(conversations)
+                        }
+                        Log.d("ChatFragment", "Loaded ${conversations.size} conversations")
+                    } else {
+                        Log.e("ChatFragment", "API call failed: ${apiResponse?.message}")
+                        showEmptyState(binding)
+                    }
+                } else {
+                    Log.e("ChatFragment", "HTTP error: ${response.code()} - ${response.message()}")
+                    showEmptyState(binding)
+                }
+            } catch (e: Exception) {
+                Log.e("ChatFragment", "Error loading conversations", e)
+                showEmptyState(binding)
+            }
+        }
+    }
+    
+    private fun showEmptyState(binding: FragmentChatBinding) {
+        binding.conversationsRecyclerView.visibility = View.GONE
+        binding.emptyStateView.visibility = View.VISIBLE
+        
+        // Setup new chat button click listener
+        binding.newChatButton.setOnClickListener {
+            // TODO: Navigate to user selection screen to start new chat
+            Log.d("ChatFragment", "New chat button clicked")
+        }
+    }
+    
+    private fun onConversationClick(conversation: ConversationResponse) {
+        // TODO: Navigate to chat room with this conversation
+        Log.d("ChatFragment", "Conversation clicked: ${conversation.id}")
+        
+        // Get the other member info
+        val otherMember = conversation.members.firstOrNull()
+        
+        // Navigate to chat room
+        val bundle = Bundle().apply {
+            putBoolean("isDirectChat", true)
+            putString("userId", otherMember?.id.toString())
+            putString("userName", otherMember?.username)
+            putString("userAvatar", otherMember?.profilePicUrl)
+        }
+        
+        val chatRoomFragment = ChatFragment().apply {
+            arguments = bundle
+        }
+        
+        parentFragmentManager.beginTransaction()
+            .replace(R.id.fragment_container, chatRoomFragment)
+            .addToBackStack(null)
+            .commit()
     }
 
     private fun setupChatRoomUI(binding: FragmentChatRoomBinding) {

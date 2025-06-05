@@ -2,6 +2,7 @@ package com.example.chatapp
 
 import android.content.Context
 import com.example.chatapp.api.AuthApi
+import com.example.chatapp.api.ConversationApi
 import com.example.chatapp.api.UserApi
 import com.example.chatapp.utils.AuthInterceptor
 import com.example.chatapp.utils.TokenManager
@@ -87,5 +88,9 @@ object RetrofitInstance {
 
     val userApi: UserApi by lazy {
         retrofit.create(UserApi::class.java)
+    }
+
+    val conversationApi: ConversationApi by lazy {
+        retrofit.create(ConversationApi::class.java)
     }
 }
