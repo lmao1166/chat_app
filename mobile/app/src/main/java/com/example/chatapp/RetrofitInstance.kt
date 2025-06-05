@@ -4,6 +4,7 @@ import android.content.Context
 import com.example.chatapp.api.AuthApi
 import com.example.chatapp.api.ConversationApi
 import com.example.chatapp.api.UserApi
+import com.example.chatapp.api.MessageApi
 import com.example.chatapp.utils.AuthInterceptor
 import com.example.chatapp.utils.TokenManager
 import okhttp3.Interceptor
@@ -92,5 +93,9 @@ object RetrofitInstance {
 
     val conversationApi: ConversationApi by lazy {
         retrofit.create(ConversationApi::class.java)
+    }
+
+    val messageApi: MessageApi by lazy {
+        retrofit.create(MessageApi::class.java)
     }
 }

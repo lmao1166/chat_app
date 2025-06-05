@@ -16,7 +16,10 @@
         app:cardBackgroundColor="#FFFFFF"
         app:cardCornerRadius="16dp"
         app:cardElevation="1dp"
+        app:layout_constrainedWidth="true"
+        app:layout_constraintHorizontal_bias="0"
         app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toTopOf="parent">
 
         <LinearLayout
@@ -31,6 +34,12 @@
                 android:layout_height="wrap_content"
                 android:textColor="#212529"
                 android:textSize="16sp"
+                android:autoLink="web|email|phone"
+                android:maxWidth="260dp"
+                android:minWidth="0dp"
+                android:lineSpacingExtra="2dp"
+                android:textDirection="ltr"
+                android:textAlignment="viewStart"
                 tools:text="Xin chào, bạn khỏe không?" />
 
             <TextView
@@ -55,6 +64,9 @@
         app:cardBackgroundColor="@color/blue"
         app:cardCornerRadius="16dp"
         app:cardElevation="1dp"
+        app:layout_constrainedWidth="true"
+        app:layout_constraintHorizontal_bias="1"
+        app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toTopOf="parent"
         tools:visibility="visible">
@@ -71,6 +83,12 @@
                 android:layout_height="wrap_content"
                 android:textColor="@color/white"
                 android:textSize="16sp"
+                android:autoLink="web|email|phone"
+                android:maxWidth="260dp"
+                android:minWidth="0dp"
+                android:lineSpacingExtra="2dp"
+                android:textDirection="rtl"
+                android:textAlignment="viewEnd"
                 tools:text="Tôi khỏe, còn bạn thế nào?" />
 
             <TextView
