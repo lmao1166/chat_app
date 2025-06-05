@@ -250,17 +250,39 @@ class ChatFragment : Fragment() {
 
         // Observe messages
         viewModel.messages.observe(viewLifecycleOwner) { messages ->
-            messageAdapter.submitList(messages)
+            val previousCount = messageAdapter.itemCount
+            messageAdapter.submitList(messages) {
+                // Callback sau khi danh sách được cập nhật
+                if (messages.isNotEmpty()) {
+                    // Chỉ cuộn đến dưới cùng nếu đang ở gần cuối danh sách hoặc có tin nhắn mới
+                    val layoutManager = binding.messagesRecyclerView.layoutManager as LinearLayoutManager
+                    val lastVisiblePosition = layoutManager.findLastVisibleItemPosition()
 
-            // Scroll to bottom after loading messages
-            if (messages.isNotEmpty()) {
-                binding.messagesRecyclerView.scrollToPosition(messages.size - 1)
+                    if (previousCount == 0 || // Lần đầu tiên tải tin nhắn
+                        messages.size > previousCount || // Có tin nhắn mới
+                        lastVisiblePosition >= previousCount - 3) { // Đang xem gần cuối danh sách
+
+                        binding.messagesRecyclerView.post {
+                            binding.messagesRecyclerView.scrollToPosition(messages.size - 1)
+                        }
+                    }
+                }
             }
         }
 
         // Observe typing indicators
         viewModel.typingUsers.observe(viewLifecycleOwner) { typingUsers ->
             updateTypingIndicator(binding, typingUsers)
+
+            // Cuộn lên khi có người đang nhập tin nhắn
+            if (typingUsers.isNotEmpty()) {
+                val messageCount = messageAdapter.itemCount
+                if (messageCount > 0) {
+                    binding.messagesRecyclerView.post {
+                        binding.messagesRecyclerView.scrollToPosition(messageCount - 1)
+                    }
+                }
+            }
         }
 
         // Observe online users
@@ -306,6 +328,19 @@ class ChatFragment : Fragment() {
         binding.messagesRecyclerView.apply {
             this.layoutManager = layoutManager
             adapter = messageAdapter
+
+            // Thêm listener để cuộn tự động khi RecyclerView thay đổi kích thước
+            addOnLayoutChangeListener { _, _, _, _, bottom, _, _, _, oldBottom ->
+                if (bottom < oldBottom) {
+                    // Khi bàn phím hiện lên, cuộn đến tin nhắn cuối cùng
+                    postDelayed({
+                        val messageCount = messageAdapter.itemCount
+                        if (messageCount > 0) {
+                            scrollToPosition(messageCount - 1)
+                        }
+                    }, 100)
+                }
+            }
         }
     }    private fun loadChatHistory() {
         if (conversationId != null) {
@@ -342,6 +377,16 @@ class ChatFragment : Fragment() {
 
         if (activeConversationId != null) {
             viewModel.sendMessage(activeConversationId, message)
+
+            // Đảm bảo RecyclerView cuộn đến tin nhắn mới nhất sau khi gửi
+            _chatRoomBinding?.let { binding ->
+                binding.messagesRecyclerView.post {
+                    val messageCount = messageAdapter.itemCount
+                    if (messageCount > 0) {
+                        binding.messagesRecyclerView.scrollToPosition(messageCount - 1)
+                    }
+                }
+            }
         } else {
             Log.e("ChatFragment", "Cannot send message - no active conversation")
             Toast.makeText(context, "Không thể gửi tin nhắn - không có cuộc trò chuyện nào đang hoạt động", Toast.LENGTH_SHORT).show()

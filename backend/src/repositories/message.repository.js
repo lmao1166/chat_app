@@ -32,7 +32,7 @@ class MessageRepository {
                     {
                         model: User,
                         as: 'sender',
-                        attributes: ['id', 'username', 'email']
+                        attributes: ['id', 'username', 'profilePicUrl']
                     },
                     {
                         model: Conversation,

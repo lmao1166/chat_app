@@ -117,6 +117,7 @@ class MessageService {
     }
 
     formatMessage(message) {
+        const domain = process.env.DOMAIN || 'localhost:3000';
         return {
             id: message.message_id,
             content: message.content,
@@ -127,8 +128,7 @@ class MessageService {
             sender: message.sender ? {
                 id: message.sender.id,
                 username: message.sender.username,
-                email: message.sender.email,
-                profilePicUrl: message.sender.profilePicUrl,
+                profilePicUrl: `http://${domain}/api/v1/uploads/profiles/` + message.sender.profilePicUrl,
             } : null
         };
     }

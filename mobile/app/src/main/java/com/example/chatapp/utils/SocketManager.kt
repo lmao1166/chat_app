@@ -28,7 +28,6 @@ class SocketManager private constructor() {
     
     private var socket: Socket? = null
     private var isConnected = false
-    private var currentUserId: String? = null
     private var currentConversationId: Int? = null
     
     // Thêm biến để lưu thông tin người dùng hiện tại bao gồm ảnh đại diện
@@ -481,3 +480,4 @@ class SocketManager private constructor() {
         return currentUserData
     }
 }
+

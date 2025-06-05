@@ -1,5 +1,6 @@
 package com.example.chatapp.ui.home.chat
 
+import android.annotation.SuppressLint
 import android.app.Application
 import android.content.Context
 import android.util.Log
@@ -13,9 +14,7 @@ import com.example.chatapp.model.response.MessageSender
 import com.example.chatapp.repository.ConversationRepository
 import com.example.chatapp.repository.MessageRepository
 import com.example.chatapp.utils.SocketManager
-import com.example.chatapp.utils.TokenManager
 import kotlinx.coroutines.launch
-import org.json.JSONObject
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -28,6 +27,7 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
     private val conversationRepository = ConversationRepository()
     private val messageRepository = MessageRepository()
     private val socketManager = SocketManager.getInstance()
+    @SuppressLint("StaticFieldLeak")
     private val context: Context = application.applicationContext
 
     // Thông tin người dùng hiện tại
@@ -81,7 +81,7 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
                     val newMessage = MessageResponse(
                         content = messageData.optString("content", ""),
                         timestamp = messageData.optString("createdAt", getCurrentTimestamp()),
-                        attachmentUrl = messageData.optString("attachmentUrl", null),
+                        attachmentUrl = messageData.optString("attachmentUrl", null.toString()),
                         sender = MessageSender(
                             id = messageData.optJSONObject("sender")?.optInt("id") ?: 0,
                             username = messageData.optJSONObject("sender")?.optString("username") ?: "",
@@ -340,3 +340,5 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 }
+
+
