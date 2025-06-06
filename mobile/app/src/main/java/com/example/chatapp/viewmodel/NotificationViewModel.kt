@@ -31,21 +31,33 @@ class NotificationViewModel : ViewModel() {
             try {
                 _isLoading.value = true
                 _error.value = ""
-
                 val response = notificationRepository.getUserNotifications(page, 20, unreadOnly)
                 if (response.isSuccessful) {
-                    response.body()?.let { apiResponse ->
-                        if (apiResponse.success) {
-                            _notifications.value = apiResponse.data ?: emptyList()
-                        } else {
-                            _error.value = apiResponse.message ?: "Không thể tải thông báo"
+                    try {
+                        response.body()?.let { apiResponse ->
+                            if (apiResponse.success) {
+                                // Extract notifications from the nested structure
+                                val notificationList = apiResponse.data?.notifications ?: emptyList()
+                                _notifications.value = notificationList
+                            } else {
+                                _error.value = apiResponse.message ?: "Không thể tải thông báo"
+                            }
                         }
+                    } catch (e: Exception) {
+                        // Enhanced error handling for JSON parsing issues
+                        _error.value = "Lỗi định dạng dữ liệu: ${e.message}"
+                        _notifications.value = emptyList() // Set empty list to avoid crash
+
+                        // Log error for debugging
+                        android.util.Log.e("NotificationViewModel", "JSON parsing error: ${e.message}", e)
                     }
                 } else {
                     _error.value = "Lỗi kết nối: ${response.code()}"
                 }
             } catch (e: Exception) {
                 _error.value = "Lỗi: ${e.message}"
+                // Log chi tiết lỗi
+                android.util.Log.e("NotificationViewModel", "Error loading notifications", e)
             } finally {
                 _isLoading.value = false
             }

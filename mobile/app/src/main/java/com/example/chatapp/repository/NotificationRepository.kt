@@ -3,6 +3,7 @@ package com.example.chatapp.repository
 import com.example.chatapp.RetrofitInstance
 import com.example.chatapp.model.response.ApiResponse
 import com.example.chatapp.model.response.NotificationResponse
+import com.example.chatapp.model.response.NotificationListResponse
 import retrofit2.Response
 
 class NotificationRepository {
@@ -14,7 +15,7 @@ class NotificationRepository {
         page: Int = 1,
         limit: Int = 20,
         unreadOnly: Boolean = false
-    ): Response<ApiResponse<List<NotificationResponse>>> {
+    ): Response<ApiResponse<NotificationListResponse>> {
         return RetrofitInstance.notificationApi.getUserNotifications(page, limit, unreadOnly)
     }
 

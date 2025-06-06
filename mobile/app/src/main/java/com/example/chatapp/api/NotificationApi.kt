@@ -3,6 +3,7 @@ package com.example.chatapp.api
 import com.example.chatapp.model.request.NotificationRequest
 import com.example.chatapp.model.response.ApiResponse
 import com.example.chatapp.model.response.NotificationResponse
+import com.example.chatapp.model.response.NotificationListResponse
 import retrofit2.Response
 import retrofit2.http.*
 
@@ -12,7 +13,7 @@ interface NotificationApi {
         @Query("page") page: Int = 1,
         @Query("limit") limit: Int = 20,
         @Query("unreadOnly") unreadOnly: Boolean = false
-    ): Response<ApiResponse<List<NotificationResponse>>>
+    ): Response<ApiResponse<NotificationListResponse>>
     
     @GET("api/v1/notifications/unread-count")
     suspend fun getUnreadCount(): Response<ApiResponse<Map<String, Int>>>
