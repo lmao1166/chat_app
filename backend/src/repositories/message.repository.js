@@ -80,13 +80,11 @@ class MessageRepository {
             await transaction.rollback();
             throw new Error('Error creating message: ' + error.message);
         }
-    }
-
-    async update(id, messageData) {
+    }    async update(id, messageData) {
         const transaction = await message.sequelize.transaction();
         try {
             const [updatedRows] = await message.update(messageData, {
-                where: { message_id: id },
+                where: { id: id },
                 transaction: transaction
             });
             await transaction.commit();
@@ -95,13 +93,11 @@ class MessageRepository {
             await transaction.rollback();
             throw new Error('Error updating message: ' + error.message);
         }
-    }
-
-    async delete(id) {
+    }    async delete(id) {
         const transaction = await message.sequelize.transaction();
         try {
             const deletedRows = await message.destroy({
-                where: { message_id: id },
+                where: { id: id },
                 transaction: transaction
             });
             await transaction.commit();
@@ -110,16 +106,14 @@ class MessageRepository {
             await transaction.rollback();
             throw new Error('Error deleting message: ' + error.message);
         }
-    }
-
-    async markAsDeleted(id, userId) {
+    }    async markAsDeleted(id, userId) {
         const transaction = await message.sequelize.transaction();
         try {
             const [updatedRows] = await message.update(
                 { deleted_by_sender: true },
                 {
                     where: { 
-                        message_id: id,
+                        id: id,
                         sender_id: userId
                     },
                     transaction: transaction

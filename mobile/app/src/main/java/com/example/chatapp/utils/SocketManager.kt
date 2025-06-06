@@ -29,7 +29,7 @@ class SocketManager private constructor() {
     private var socket: Socket? = null
     private var isConnected = false
     private var currentConversationId: Int? = null
-    
+
     // Thêm biến để lưu thông tin người dùng hiện tại bao gồm ảnh đại diện
     private var currentUserData: JSONObject? = null
 
@@ -38,7 +38,7 @@ class SocketManager private constructor() {
     private val userStatusListeners = mutableListOf<(userId: String, isOnline: Boolean) -> Unit>()
     private val typingListeners = mutableListOf<(userId: String, isTyping: Boolean) -> Unit>()
     private val connectionListeners = mutableListOf<(isConnected: Boolean) -> Unit>()
-    
+
     /**
      * Initialize socket connection with authentication token
      */
@@ -90,20 +90,24 @@ class SocketManager private constructor() {
         // Notify listeners about disconnection
         connectionListeners.forEach { it(false) }
     }
-    
-    /**
+      /**
      * Join a conversation room for real-time messaging
      */
     fun joinConversation(conversationId: Int) {
+        Log.d(TAG, "Attempting to join conversation: $conversationId")
+        
         if (!isConnected) {
-            Log.w(TAG, "Socket not connected, cannot join conversation")
+            Log.w(TAG, "Socket not connected, storing conversation ID for later join")
+            currentConversationId = conversationId
             return
         }
         
         // Leave current conversation if any
         currentConversationId?.let { currentId ->
-            socket?.emit("leave_conversation", currentId)
-            Log.d(TAG, "Left conversation: $currentId")
+            if (currentId != conversationId) {
+                socket?.emit("leave_conversation", currentId)
+                Log.d(TAG, "Left previous conversation: $currentId")
+            }
         }
         
         // Join new conversation
@@ -214,6 +218,37 @@ class SocketManager private constructor() {
     }
 
     /**
+     * Send a message with detailed user information and message ID
+     */
+    fun sendMessage(conversationId: String, content: String, userId: String, userName: String, profilePicUrl: String, messageId: String?) {
+        if (socket == null) {
+            Log.e(TAG, "Socket is null, cannot send message")
+            return
+        }
+
+        try {
+            val senderData = JSONObject().apply {
+                put("id", userId)
+                put("username", userName)
+                put("profilePicUrl", profilePicUrl)
+            }
+
+            val messageData = JSONObject().apply {
+                put("conversationId", conversationId.toInt())
+                put("content", content)
+                put("sender", senderData)
+                messageId?.let { put("messageId", it) }
+            }
+
+            Log.d(TAG, "Sending message via socket with user info and ID: $messageData")
+            socket?.emit("send_message", messageData)
+            Log.d(TAG, "Message sent via socket with complete sender info and ID: $content (ID: $messageId)")
+        } catch (e: Exception) {
+            Log.e(TAG, "Error sending message via socket", e)
+        }
+    }
+
+    /**
      * Send typing indicator
      */
     fun startTyping() {
@@ -285,12 +320,12 @@ class SocketManager private constructor() {
             on(Socket.EVENT_CONNECT, onConnect)
             on(Socket.EVENT_DISCONNECT, onDisconnect)
             on(Socket.EVENT_CONNECT_ERROR, onConnectError)
-            
+
             // Message events
             on("new_message", onNewMessage)
             on("message_updated", onMessageUpdated)
             on("message_deleted", onMessageDeleted)
-            
+
             // User status events
             on("user_online", onUserOnline)
             on("user_offline", onUserOffline)
@@ -303,17 +338,23 @@ class SocketManager private constructor() {
             on("message_read_by_user", onMessageRead)
         }
     }
-    
-    // Event handlers
+      // Event handlers
     private val onConnect = Emitter.Listener {
         isConnected = true
         Log.d(TAG, "Socket connected successfully")
+        
+        // Tự động rejoin conversation nếu có conversation đang active
+        currentConversationId?.let { conversationId ->
+            Log.d(TAG, "Rejoining conversation after reconnect: $conversationId")
+            socket?.emit("join_conversation", conversationId)
+        }
+        
         connectionListeners.forEach { it(true) }
     }
     
     private val onDisconnect = Emitter.Listener {
         isConnected = false
-        currentConversationId = null
+        // KHÔNG reset currentConversationId để có thể rejoin sau khi reconnect
         Log.d(TAG, "Socket disconnected")
         connectionListeners.forEach { it(false) }
     }
@@ -365,12 +406,12 @@ class SocketManager private constructor() {
             userStatusListeners.forEach { it(userId, false) }
         }
     }
-    
-    private val onUserTyping = Emitter.Listener { args ->
+      private val onUserTyping = Emitter.Listener { args ->
         if (args.isNotEmpty() && args[0] is JSONObject) {
             val typingData = args[0] as JSONObject
             val userId = typingData.optString("userId")
-            Log.d(TAG, "User typing: $userId")
+            val conversationId = typingData.optString("conversationId")
+            Log.d(TAG, "User typing: $userId in conversation: $conversationId")
             typingListeners.forEach { it(userId, true) }
         }
     }
@@ -379,7 +420,8 @@ class SocketManager private constructor() {
         if (args.isNotEmpty() && args[0] is JSONObject) {
             val typingData = args[0] as JSONObject
             val userId = typingData.optString("userId")
-            Log.d(TAG, "User stopped typing: $userId")
+            val conversationId = typingData.optString("conversationId")
+            Log.d(TAG, "User stopped typing: $userId in conversation: $conversationId")
             typingListeners.forEach { it(userId, false) }
         }
     }
@@ -480,4 +522,9 @@ class SocketManager private constructor() {
         return currentUserData
     }
 }
+
+
+
+
+
 

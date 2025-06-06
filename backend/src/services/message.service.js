@@ -51,27 +51,46 @@ class MessageService {
         }
     }
 
-
-      async sendMessage(senderId, messageData) {
+    async sendMessage(senderId, messageData) {
         try {
             const conversation = await conversationRepository.findById(messageData.conversation_id);
             if (!conversation) throw this._createError('Cuộc trò chuyện không tồn tại', 404);
 
+            // 1. Lưu tin nhắn vào database TRƯỚC (primary source of truth)
             const newMessage = await messageRepository.create({
                 content: messageData.content.trim(),
                 sender_id: senderId,
                 conversation_id: messageData.conversation_id,
                 timestamp: new Date(),
-                attachment_url: messageData.attachment_url || null
+                attachment_url: messageData.attachment_url || null,
+                message_type: messageData.type || 'text',
+                delivery_status: 'sent' // Đã lưu thành công vào DB
             });
 
-            // Update conversation and get formatted message
-            await conversationRepository.update(messageData.conversation_id, { last_message_at: new Date() });
+            // 2. Update conversation
+            await conversationRepository.update(messageData.conversation_id, { 
+                last_message_at: new Date() 
+            });
+
+            // 3. Lấy tin nhắn đầy đủ với thông tin sender
             const completeMessage = await messageRepository.findById(newMessage.id);
             const formattedMessage = this.formatMessage(completeMessage);
 
-            // Emit real-time event
-            socketService.emitNewMessage(messageData.conversation_id, formattedMessage);
+            // 4. Emit real-time event (secondary, not critical)
+            try {
+                socketService.emitNewMessage(messageData.conversation_id, formattedMessage);
+                
+                // Cập nhật delivery status nếu emit thành công
+                await messageRepository.update(newMessage.id, {
+                    delivery_status: 'delivered'
+                });
+                
+                console.log(`Message ${newMessage.id} delivered via Socket.IO`);
+            } catch (socketError) {
+                console.warn('Socket emit failed, but message saved:', socketError.message);
+                // Message vẫn được lưu, chỉ real-time bị lỗi
+            }
+
             return formattedMessage;
         } catch (error) {
             this._handleError(error, 'Error sending message');
@@ -114,21 +133,22 @@ class MessageService {
         } catch (error) {
             this._handleError(error, 'Error deleting message');
         }
-    }
-
-    formatMessage(message) {
+    }    formatMessage(message) {
         const domain = process.env.DOMAIN || 'localhost:3000';
         return {
-            id: message.message_id,
+            id: message.id,
             content: message.content,
             timestamp: message.timestamp,
-            type: message.type,
+            type: message.type || message.message_type,
             attachment_url: message.attachment_url,
+            delivery_status: message.delivery_status || 'sent',
             deleted_by_sender: message.deleted_by_sender,
             sender: message.sender ? {
                 id: message.sender.id,
                 username: message.sender.username,
-                profilePicUrl: `http://${domain}/api/v1/uploads/profiles/` + message.sender.profilePicUrl,
+                profilePicUrl: message.sender.profilePicUrl ? 
+                    `http://${domain}/api/v1/uploads/profiles/${message.sender.profilePicUrl}` : 
+                    null,
             } : null
         };
     }

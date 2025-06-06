@@ -48,14 +48,29 @@ class SocketService {
         socket.join(`user_${userId}`);
 
         // Notify user online status
-        socket.broadcast.emit('user_online', { userId, userInfo });
-
-        // Event handlers
+        socket.broadcast.emit('user_online', { userId, userInfo });        // Event handlers
         const events = {
-            join_conversation: (id) => socket.join(`conversation_${id}`),
-            leave_conversation: (id) => socket.leave(`conversation_${id}`),
-            typing_start: (data) => socket.to(`conversation_${data.conversationId}`).emit('user_typing', { userId, userInfo, conversationId: data.conversationId }),
-            typing_stop: (data) => socket.to(`conversation_${data.conversationId}`).emit('user_stopped_typing', { userId, conversationId: data.conversationId }),
+            join_conversation: (id) => {
+                socket.join(`conversation_${id}`);
+                console.log(`User ${userInfo.username} joined conversation ${id}`);
+            },
+            leave_conversation: (id) => {
+                socket.leave(`conversation_${id}`);
+                console.log(`User ${userInfo.username} left conversation ${id}`);
+            },
+            typing_start: (data) => socket.to(`conversation_${data.conversationId}`).emit('user_typing', { 
+                userId, 
+                userInfo, 
+                conversationId: data.conversationId,
+                username: userInfo.username,
+                isTyping: true
+            }),
+            typing_stop: (data) => socket.to(`conversation_${data.conversationId}`).emit('user_stopped_typing', { 
+                userId, 
+                conversationId: data.conversationId,
+                username: userInfo.username,
+                isTyping: false
+            }),
             message_read: (data) => socket.to(`conversation_${data.conversationId}`).emit('message_read_by_user', { ...data, userId })
         };
 
@@ -70,15 +85,28 @@ class SocketService {
     }    // Real-time event emission methods
 
     emitNewMessage(conversationId, message) {
-        this._emitToConversation(conversationId, 'new_message', message);
+        // Thêm conversationId vào message data để client có thể filter
+        const messageWithConversationId = {
+            ...message,
+            conversationId: conversationId
+        };
+        this._emitToConversation(conversationId, 'new_message', messageWithConversationId);
     }
 
     emitMessageUpdate(conversationId, message) {
-        this._emitToConversation(conversationId, 'message_updated', message);
+        const messageWithConversationId = {
+            ...message,
+            conversationId: conversationId
+        };
+        this._emitToConversation(conversationId, 'message_updated', messageWithConversationId);
     }
 
     emitMessageDelete(conversationId, messageId, userId) {
-        this._emitToConversation(conversationId, 'message_deleted', { messageId, deletedBy: userId, conversationId });
+        this._emitToConversation(conversationId, 'message_deleted', { 
+            messageId, 
+            deletedBy: userId, 
+            conversationId: conversationId 
+        });
     }
 
     notifyUser(userId, event, data) {
