@@ -12,6 +12,7 @@ import com.example.chatapp.model.response.ConversationResponse
 import com.squareup.picasso.Picasso
 import java.text.SimpleDateFormat
 import java.util.*
+import java.util.TimeZone
 
 class ConversationAdapter(
     private val onConversationClick: (ConversationResponse) -> Unit
@@ -30,9 +31,7 @@ class ConversationAdapter(
 
     inner class ConversationViewHolder(
         private val binding: ItemConversationBinding
-    ) : RecyclerView.ViewHolder(binding.root) {
-
-        @SuppressLint("SetTextI18n")
+    ) : RecyclerView.ViewHolder(binding.root) {        @SuppressLint("SetTextI18n")
         fun bind(conversation: ConversationResponse) {
             // Lấy thông tin của member khác (không phải user hiện tại)
             val otherMember = conversation.members.firstOrNull()
@@ -40,14 +39,31 @@ class ConversationAdapter(
             // Hiển thị tên
             binding.contactName.text = otherMember?.username ?: "Unknown"
             
-            // Hiển thị tin nhắn cuối (tạm thời để trống vì API chưa có)
-            binding.lastMessage.text = "Nhấn để bắt đầu trò chuyện"
+            // Hiển thị tin nhắn cuối cùng
+            if (conversation.lastMessage != null) {
+                val lastMsg = conversation.lastMessage
+                when (lastMsg.messageType) {
+                    "image" -> {
+                        binding.lastMessage.text = "📷 Hình ảnh"
+                    }
+                    "file" -> {
+                        binding.lastMessage.text = "📎 File đính kèm"
+                    }
+                    else -> {
+                        binding.lastMessage.text = lastMsg.content
+                    }
+                }
+                // Hiển thị thời gian tin nhắn cuối
+                binding.lastMessageTime.text = formatTime(lastMsg.timestamp)
+            } else {
+                binding.lastMessage.text = "Nhấn để bắt đầu trò chuyện"
+                binding.lastMessageTime.text = formatTime(conversation.createdAt)
+            }
             
-            // Hiển thị thời gian (sử dụng createdAt làm placeholder)
-            binding.lastMessageTime.text = formatTime(conversation.createdAt)
+            // Ẩn badge số tin nhắn chưa đọc (có thể implement sau)
+            binding.unreadCount.visibility = android.view.View.GONE
             
-            // Ẩn badge số tin nhắn chưa đọc
-            binding.unreadCount.visibility = android.view.View.GONE            // Load avatar - prioritize conversation thumbnail, then member's profile pic
+            // Load avatar - prioritize conversation thumbnail, then member's profile pic
             val avatarUrl = if (!conversation.thumbnail.isNullOrEmpty()) {
                 conversation.thumbnail
             } else {
@@ -76,10 +92,10 @@ class ConversationAdapter(
                 onConversationClick(conversation)
             }
         }
-        
-        private fun formatTime(dateString: String): String {
+          private fun formatTime(dateString: String): String {
             return try {
                 val inputFormat = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.getDefault())
+                inputFormat.timeZone = TimeZone.getTimeZone("UTC")
                 val outputFormat = SimpleDateFormat("HH:mm", Locale.getDefault())
                 val date = inputFormat.parse(dateString)
                 outputFormat.format(date ?: Date())

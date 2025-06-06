@@ -99,18 +99,15 @@ class ConversationService {
             console.error('Error in getConversationById:', error);
             throw new Error('Không thể lấy cuộc trò chuyện: ' + error.message);
         }
-    }    async getConversationsByUserId(userId) {
+    }    
+    
+    async getConversationsByUserId(userId) {
         try {
-            const conversations = await conversationRepository.findByUserId(userId, {
-                include: [{
-                    model: User,
-                    as: 'members',
-                    attributes: ['id', 'username', 'email', 'profilePicUrl']
-                }]
-            });
+            const conversations = await conversationRepository.findByUserId(userId);
 
             return conversations.map(conversation => {
-                const conversationData = conversation.toJSON();
+                // Repository already returns plain objects, no need to call toJSON()
+                const conversationData = conversation;
                 
                 // Set thumbnail to the member's profile picture (for private conversations)
                 if (conversationData.type === 'private' && conversationData.members.length > 0) {

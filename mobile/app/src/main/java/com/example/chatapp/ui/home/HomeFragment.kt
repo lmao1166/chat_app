@@ -12,14 +12,9 @@ import com.example.chatapp.databinding.FragmentHomeBinding
 import com.example.chatapp.ui.home.chat.ChatFragment
 import com.example.chatapp.ui.home.contacts.ContactsFragment
 import com.example.chatapp.ui.home.profile.ProfileFragment
-import com.example.chatapp.ui.notification.NotificationFragment
-import com.example.chatapp.utils.NotificationBadgeHelper
-import com.example.chatapp.viewmodel.NotificationViewModel
 
 class HomeFragment : Fragment() {
     private lateinit var binding: FragmentHomeBinding
-    private lateinit var notificationViewModel: NotificationViewModel
-    private var badgeHelper: NotificationBadgeHelper? = null
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -28,15 +23,12 @@ class HomeFragment : Fragment() {
     ): View {        binding = DataBindingUtil.inflate(inflater, R.layout.fragment_home, container, false)
 
         // Initialize notification ViewModel
-        notificationViewModel = ViewModelProvider(this)[NotificationViewModel::class.java]
-
         // Set initial fragment
         if (savedInstanceState == null) {
             loadFragment(ChatFragment())
         }
 
         setupBottomNavigation()
-        setupNotificationBadge()
         return binding.root
     }
 
@@ -50,10 +42,6 @@ class HomeFragment : Fragment() {
                     loadFragment(ContactsFragment())
                     return@setOnItemSelectedListener true
                 }
-                R.id.nav_notifications -> {
-                    loadFragment(NotificationFragment())
-                    return@setOnItemSelectedListener true
-                }
                 R.id.nav_profile -> {
                     loadFragment(ProfileFragment())
                     return@setOnItemSelectedListener true
@@ -62,14 +50,6 @@ class HomeFragment : Fragment() {
             false
         }    }
 
-    private fun setupNotificationBadge() {
-        badgeHelper = NotificationBadgeHelper(
-            binding.bottomNavigation,
-            notificationViewModel,
-            viewLifecycleOwner
-        )
-        badgeHelper?.setupBadge()
-    }
 
     fun loadFragment(fragment: Fragment) {
         childFragmentManager.beginTransaction()
@@ -84,7 +64,5 @@ class HomeFragment : Fragment() {
 
     override fun onDestroyView() {
         super.onDestroyView()
-        badgeHelper?.removeBadge()
-        badgeHelper = null
     }
 }

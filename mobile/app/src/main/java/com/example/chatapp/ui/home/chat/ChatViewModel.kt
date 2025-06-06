@@ -11,6 +11,7 @@ import androidx.lifecycle.viewModelScope
 import com.example.chatapp.model.response.ConversationResponse
 import com.example.chatapp.model.response.MessageResponse
 import com.example.chatapp.model.response.MessageSender
+import com.example.chatapp.model.response.LastMessage
 import com.example.chatapp.repository.ConversationRepository
 import com.example.chatapp.repository.MessageRepository
 import com.example.chatapp.utils.SocketManager
@@ -91,19 +92,11 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
                     Log.d("ChatViewModel", "Socket disconnected")
                 }
             }
-        }
-
-        // Listen for new messages từ người khác (không phải tin nhắn của mình)
+        }        // Listen for new messages từ người khác (không phải tin nhắn của mình)
         socketManager.addMessageListener { messageData ->
             viewModelScope.launch {
                 try {
-                    // KIỂM TRA CONVERSATION CONTEXT TRƯỚC
                     val messageConversationId = messageData.optString("conversationId", "")
-                    if (messageConversationId.isNotEmpty() && messageConversationId != currentConversationId) {
-                        Log.d("ChatViewModel", "Message from different conversation, ignoring: $messageConversationId != $currentConversationId")
-                        return@launch
-                    }
-
                     val senderId = messageData.optJSONObject("sender")?.optInt("id", -1) ?: -1
                     val senderIdString = senderId.toString()
 
@@ -136,43 +129,50 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
 
                     // Chỉ thêm tin nhắn nếu không phải từ current user
                     if (senderIdString != currentUserId) {
-                        val currentMessages = _messages.value?.toMutableList() ?: mutableListOf()
-
-                        // Double check - tìm tin nhắn duplicate trong danh sách hiện tại
-                        val existingMessage = currentMessages.find { message ->
-                            // Check by ID first if available
-                            if (messageId.isNotEmpty() && message.id?.toString() == messageId) {
-                                true
-                            } else {
-                                // Fallback to content + sender + timestamp check
-                                message.content == messageContent &&
-                                        message.sender.id == senderId &&
-                                        abs(parseTimestamp(message.timestamp) - parseTimestamp(messageTimestamp)) < 3000 // 3 giây tolerance
-                            }
-                        }
-
-                        if (existingMessage == null) {
-                            val newMessage = MessageResponse(
-                                id = if (messageId.isNotEmpty()) messageId.toIntOrNull() else null,
-                                content = messageContent,
-                                timestamp = messageTimestamp,
-                                attachmentUrl = messageData.optString("attachment_url", null),
-                                sender = MessageSender(
-                                    id = senderId,
-                                    username = messageData.optJSONObject("sender")?.optString("username") ?: "Unknown",
-                                    email = messageData.optJSONObject("sender")?.optString("email") ?: "",
-                                    profilePicUrl = messageData.optJSONObject("sender")?.optString("profilePicUrl")
-                                )
+                        val newMessage = MessageResponse(
+                            id = if (messageId.isNotEmpty()) messageId.toIntOrNull() else null,
+                            content = messageContent,
+                            timestamp = messageTimestamp,
+                            attachmentUrl = messageData.optString("attachment_url", null),
+                            messageType = messageData.optString("message_type", "TEXT"),                            sender = MessageSender(
+                                id = senderId,
+                                username = messageData.optJSONObject("sender")?.optString("username") ?: "Unknown",
+                                profilePicUrl = messageData.optJSONObject("sender")?.optString("profilePicUrl")
                             )
+                        )
 
-                            currentMessages.add(newMessage)
-                            // Sort messages by timestamp to maintain order
-                            currentMessages.sortBy { parseTimestamp(it.timestamp) }
-                            _messages.postValue(currentMessages)
+                        // Always update conversation list for any new message
+                        updateConversationWithNewMessage(messageConversationId, newMessage)
 
-                            Log.d("ChatViewModel", "Added new message from Socket.IO: ${newMessage.content} (ID: $messageId)")
+                        // Only add to current chat if it's the active conversation
+                        if (messageConversationId == currentConversationId) {
+                            val currentMessages = _messages.value?.toMutableList() ?: mutableListOf()
+
+                            // Double check - tìm tin nhắn duplicate trong danh sách hiện tại
+                            val existingMessage = currentMessages.find { message ->
+                                // Check by ID first if available
+                                if (messageId.isNotEmpty() && message.id?.toString() == messageId) {
+                                    true
+                                } else {
+                                    // Fallback to content + sender + timestamp check
+                                    message.content == messageContent &&
+                                            message.sender.id == senderId &&
+                                            abs(parseTimestamp(message.timestamp) - parseTimestamp(messageTimestamp)) < 3000 // 3 giây tolerance
+                                }
+                            }
+
+                            if (existingMessage == null) {
+                                currentMessages.add(newMessage)
+                                // Sort messages by timestamp to maintain order
+                                currentMessages.sortBy { parseTimestamp(it.timestamp) }
+                                _messages.postValue(currentMessages)
+
+                                Log.d("ChatViewModel", "Added new message from Socket.IO to current chat: ${newMessage.content} (ID: $messageId)")
+                            } else {
+                                Log.d("ChatViewModel", "Duplicate message detected and skipped: $messageContent")
+                            }
                         } else {
-                            Log.d("ChatViewModel", "Duplicate message detected and skipped: $messageContent")
+                            Log.d("ChatViewModel", "Updated conversation list for message from different conversation: $messageConversationId")
                         }
                     } else {
                         Log.d("ChatViewModel", "Skipping own message from Socket.IO: $messageContent")
@@ -181,7 +181,7 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
                     Log.e("ChatViewModel", "Error processing new message from socket", e)
                 }
             }
-        }        // Listen for typing indicators
+        }// Listen for typing indicators
         socketManager.onTyping { typingData ->
             viewModelScope.launch {
                 try {
@@ -230,18 +230,16 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
                     Log.e("ChatViewModel", "Error processing user status update", e)                }
             }
         }
-    }
-
-    // Helper function to get current timestamp
+    }    // Helper function to get current timestamp
     private fun getCurrentTimestamp(): String {
         val sdf = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.getDefault())
+        sdf.timeZone = java.util.TimeZone.getTimeZone("UTC")
         return sdf.format(Date())
-    }
-
-    // Utility method to parse timestamps
+    }// Utility method to parse timestamps
     private fun parseTimestamp(timestamp: String): Long {
         return try {
             val dateFormat = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.getDefault())
+            dateFormat.timeZone = java.util.TimeZone.getTimeZone("UTC")
             dateFormat.parse(timestamp)?.time ?: 0L
         } catch (e: Exception) {
             Log.w("ChatViewModel", "Failed to parse timestamp: $timestamp", e)
@@ -259,11 +257,17 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
 
             try {
                 val response = conversationRepository.getConversations()
-
                 if (response.isSuccessful) {
                     val apiResponse = response.body()
                     if (apiResponse?.success == true) {
-                        _conversations.value = apiResponse.data ?: emptyList()
+                        val conversations = apiResponse.data ?: emptyList()
+
+                        // Sort conversations by most recent message timestamp (newest first)
+                        val sortedConversations = conversations.sortedByDescending { conversation ->
+                            conversation.lastMessage?.timestamp?.let { parseTimestamp(it) } ?: 0L
+                        }
+
+                        _conversations.value = sortedConversations
                     } else {
                         _error.value = apiResponse?.message ?: "Unknown error"
                     }
@@ -375,14 +379,15 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
                         // Add message ID to processed set to prevent duplicate from Socket.IO
                         newMessage.id?.let { messageId ->
                             processedMessageIds.add("id_$messageId")
-                        }
-
-                        // Cập nhật UI ngay lập tức với tin nhắn từ server
+                        }                        // Cập nhật UI ngay lập tức với tin nhắn từ server
                         val currentMessages = _messages.value?.toMutableList() ?: mutableListOf()
                         currentMessages.add(newMessage)
                         // Sort to maintain chronological order
                         currentMessages.sortBy { parseTimestamp(it.timestamp) }
                         _messages.value = currentMessages
+
+                        // Cập nhật conversation list với tin nhắn mới đã gửi
+                        updateConversationWithNewMessage(conversationId.toString(), newMessage)
 
                         Log.d("ChatViewModel", "Message sent via REST API: ${newMessage.content} (ID: ${newMessage.id})")
 
@@ -440,14 +445,15 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
                         // Add message ID to processed set to prevent duplicate from Socket.IO
                         newMessage.id?.let { messageId ->
                             processedMessageIds.add("id_$messageId")
-                        }
-
-                        // Update UI immediately with message from server
+                        }                        // Update UI immediately with message from server
                         val currentMessages = _messages.value?.toMutableList() ?: mutableListOf()
                         currentMessages.add(newMessage)
                         // Sort to maintain chronological order
                         currentMessages.sortBy { parseTimestamp(it.timestamp) }
                         _messages.value = currentMessages
+
+                        // Cập nhật conversation list với tin nhắn có hình ảnh mới đã gửi
+                        updateConversationWithNewMessage(conversationId.toString(), newMessage)
 
                         Log.d("ChatViewModel", "Message with image sent via REST API: ${newMessage.content} (ID: ${newMessage.id})")
 
@@ -580,4 +586,91 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
             socketManager.joinConversation(conversationId)
         }
     }
+
+    /**
+     * Updates the conversation list with a new message, making it the most recent
+     * @param conversationId ID of the conversation
+     * @param newMessage The new message to update with
+     */
+    private fun updateConversationWithNewMessage(conversationId: String, newMessage: MessageResponse) {
+        val currentConversations = _conversations.value?.toMutableList() ?: return
+
+        // Find the conversation to update
+        val conversationIndex = currentConversations.indexOfFirst {
+            it.id.toString() == conversationId
+        }
+
+        if (conversationIndex != -1) {
+            val conversation = currentConversations[conversationIndex]            // Create updated conversation with new last message
+            val updatedConversation = conversation.copy(
+                lastMessage = LastMessage(
+                    id = newMessage.id ?: 0,
+                    content = newMessage.content,
+                    timestamp = newMessage.timestamp,
+                    messageType = newMessage.messageType ?: "TEXT",
+                    attachmentUrl = newMessage.attachmentUrl,
+                    sender = newMessage.sender
+                )
+            )
+
+            // Replace the conversation at the same index
+            currentConversations[conversationIndex] = updatedConversation
+
+            // Sort conversations by most recent message timestamp (newest first)
+            currentConversations.sortByDescending { conversation ->
+                conversation.lastMessage?.timestamp?.let { parseTimestamp(it) } ?: 0L
+            }
+
+            // Update the conversations LiveData
+            _conversations.postValue(currentConversations)
+
+            Log.d("ChatViewModel", "Updated conversation $conversationId with new message: ${newMessage.content}")
+        } else {
+            Log.w("ChatViewModel", "Conversation $conversationId not found in current conversation list")
+        }
+    }
+
+    /**
+     * Refreshes the conversation list to get latest messages from server
+     * This helps catch any messages we might have missed from other conversations
+     */
+    fun refreshConversationList() {
+        viewModelScope.launch {
+            try {
+                val response = conversationRepository.getConversations()
+
+                if (response.isSuccessful) {
+                    val apiResponse = response.body()
+                    if (apiResponse?.success == true) {
+                        val newConversations = apiResponse.data ?: emptyList()
+
+                        // Sort by most recent message timestamp
+                        val sortedConversations = newConversations.sortedByDescending { conversation ->
+                            conversation.lastMessage?.timestamp?.let { parseTimestamp(it) } ?: 0L
+                        }
+
+                        _conversations.value = sortedConversations
+                        Log.d("ChatViewModel", "Refreshed conversation list with ${sortedConversations.size} conversations")
+                    }
+                }
+            } catch (e: Exception) {
+                Log.e("ChatViewModel", "Error refreshing conversation list", e)
+            }
+        }
+    }
+
+    /**
+     * Called when user switches to a different conversation
+     * Updates the conversation list and handles real-time setup
+     */
+    fun switchToConversation(conversationId: String) {
+        // Join the new conversation for real-time updates
+        joinConversation(conversationId)
+
+        // Refresh conversation list to get latest state
+        refreshConversationList()
+
+        Log.d("ChatViewModel", "Switched to conversation: $conversationId")
+    }
 }
+

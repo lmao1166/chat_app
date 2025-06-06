@@ -12,7 +12,6 @@ import com.example.chatapp.databinding.ItemMessageReceivedBinding
 import com.example.chatapp.databinding.ItemMessageSentBinding
 import com.example.chatapp.model.response.MessageResponse
 import com.example.chatapp.ui.imageviewer.ImageViewerActivity
-import com.example.chatapp.utils.TokenManager
 import com.squareup.picasso.Picasso
 import java.text.SimpleDateFormat
 import java.util.*

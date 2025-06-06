@@ -2,7 +2,6 @@ const messageRepository = require('../repositories/message.repository');
 const conversationRepository = require('../repositories/conversation.repository');
 const memberRepository = require('../repositories/member.repository');
 const userRepository = require('../repositories/user.repository');
-const notificationService = require('./notification.service');
 const socketService = require('./socket.service');
 
 class MessageService {

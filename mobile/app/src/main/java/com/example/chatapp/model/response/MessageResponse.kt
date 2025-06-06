@@ -17,9 +17,3 @@ data class MessageResponse(
     val isDeleted: Boolean? = false
 )
 
-data class MessageSender(
-    val id: Int,
-    val username: String,
-    val email: String,
-    val profilePicUrl: String?
-)

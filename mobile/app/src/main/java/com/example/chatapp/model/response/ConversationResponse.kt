@@ -11,7 +11,8 @@ data class ConversationResponse(
     val lastMessageAt: String?,
     val createdAt: String,
     val updatedAt: String,
-    val members: List<ConversationMember>
+    val members: List<ConversationMember>,
+    val lastMessage: LastMessage?
 )
 
 data class ConversationMember(
@@ -28,4 +29,22 @@ data class ConversationMemberDetails(
     val joinedAt: String,
     @SerializedName("left_at")
     val leftAt: String?
+)
+
+data class LastMessage(
+    val id: Int,
+    val content: String,
+    val timestamp: String,
+    @SerializedName("message_type")
+    val messageType: String,
+    @SerializedName("attachment_url")
+    val attachmentUrl: String?,
+    val sender: MessageSender
+)
+
+data class MessageSender(
+    val id: Int,
+    val username: String,
+    @SerializedName("profilePicUrl")
+    val profilePicUrl: String?
 )

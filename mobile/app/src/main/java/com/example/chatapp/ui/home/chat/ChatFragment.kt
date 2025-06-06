@@ -138,10 +138,11 @@ class ChatFragment : Fragment() {
             // TODO: Navigate to user selection screen to start new chat
             Log.d("ChatFragment", "New chat button clicked")
         }
-    }
-
-    private fun onConversationClick(conversation: ConversationResponse) {
+    }    private fun onConversationClick(conversation: ConversationResponse) {
         Log.d("ChatFragment", "Conversation clicked: ${conversation.id}")
+
+        // Notify ViewModel about conversation switch for real-time updates
+        viewModel.switchToConversation(conversation.id.toString())
 
         val otherMember = conversation.members.firstOrNull()
 
@@ -457,6 +458,17 @@ class ChatFragment : Fragment() {
             Toast.makeText(context, errorMessage, Toast.LENGTH_SHORT).show()
             binding.messagesRecyclerView.visibility = View.GONE
             // Thêm logic hiển thị empty state view nếu có trong layout
+        }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        
+        // Refresh conversation list when returning to chat screen
+        // This ensures we catch any messages from other conversations
+        if (!isDirectChat) {
+            viewModel.refreshConversationList()
+            Log.d("ChatFragment", "Refreshed conversation list on resume")
         }
     }
 

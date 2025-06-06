@@ -1,15 +1,14 @@
 const message = require('../models/message.model');
 const { Message, User, Conversation } = require('../models');
 
-class MessageRepository {
-    async findAll() {
+class MessageRepository {    async findAll() {
         try {
             const messages = await message.findAll({
                 include: [
                     {
                         model: User,
                         as: 'sender',
-                        attributes: ['id', 'username', 'email']
+                        attributes: ['id', 'username', 'email', 'profilePicUrl']
                     },
                     {
                         model: Conversation,

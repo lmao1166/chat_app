@@ -1,5 +1,5 @@
 const conservation = require('../models/conversation.model.js');
-const { Conversation, User, ConversationMember, sequelize } = require('../models');
+const { Conversation, User, ConversationMember, Message, sequelize } = require('../models');
 const { Op } = require('sequelize');
 
 class ConservationRepository {
@@ -95,9 +95,7 @@ class ConservationRepository {
             await transaction.rollback();
             throw new Error('Error deleting conservation: ' + error.message);
         }
-    }
-
-    async findByUserId(userId) {        
+    }    async findByUserId(userId) {        
         try {
             const conversations = await Conversation.findAll({
                 include: [
@@ -127,7 +125,44 @@ class ConservationRepository {
                 order: [['last_message_at', 'DESC']],
                 distinct: true
             });
-            return conversations;
+
+            // Lấy tin nhắn cuối cùng cho mỗi conversation
+            const conversationsWithLastMessage = await Promise.all(
+                conversations.map(async (conversation) => {
+                    const conversationData = conversation.toJSON();
+                    
+                    // Lấy tin nhắn cuối cùng
+                    const lastMessage = await Message.findOne({
+                        where: { 
+                            conversation_id: conversation.id,
+                            is_deleted: false
+                        },                        
+                        include: [{
+                            model: User,
+                            as: 'sender',
+                            attributes: ['id', 'username', 'profilePicUrl']
+                        }],
+                        order: [['timestamp', 'DESC']]
+                    });
+                    
+                    if (lastMessage) {
+                        conversationData.lastMessage = {
+                            id: lastMessage.id,
+                            content: lastMessage.content,
+                            timestamp: lastMessage.timestamp,
+                            message_type: lastMessage.message_type,
+                            attachment_url: lastMessage.attachment_url,
+                            sender: lastMessage.sender
+                        };
+                    } else {
+                        conversationData.lastMessage = null;
+                    }
+                    
+                    return conversationData;
+                })
+            );
+
+            return conversationsWithLastMessage;
         } catch (error) {
             throw new Error('Error fetching conversations by user ID: ' + error.message);
         }
