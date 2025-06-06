@@ -28,16 +28,16 @@ const Message = sequelize.define('Message', {
         allowNull: false,
         defaultValue: 'text'
     },
-    delivery_status: {
-        type: DataTypes.ENUM('sent', 'delivered', 'failed'),
-        allowNull: false,
-        defaultValue: 'sent'
-    },
-    is_deleted: {
-        type: DataTypes.BOOLEAN,
-        allowNull: false,
-        defaultValue: false
-    }
+    // delivery_status: {
+    //     type: DataTypes.ENUM('sent', 'delivered', 'failed'),
+    //     allowNull: false,
+    //     defaultValue: 'sent'
+    // },
+    // is_deleted: {
+    //     type: DataTypes.BOOLEAN,
+    //     allowNull: false,
+    //     defaultValue: false
+    // }
 }, {
     tableName: 'messages',
     timestamps: true,

@@ -6,11 +6,11 @@ const ConversationMember = sequelize.define('ConversationMember', {
     joined_at: {
         type: DataTypes.DATE,
         allowNull: false
-    },
+    },//
     left_at: {
         type: DataTypes.DATE,
         allowNull: true
-    },
+    },//
 }, {
     tableName: 'conversation_members',
     timestamps: false,

@@ -90,12 +90,13 @@ class ChatFragment : Fragment() {
             setupChatListUI(chatBindingInflated)
             chatBindingInflated.root
         }
-    }
-
-    private fun setupChatListUI(binding: FragmentChatBinding) {
-        conversationAdapter = ConversationAdapter { conversation ->
+    }    private fun setupChatListUI(binding: FragmentChatBinding) {
+        val tokenManager = TokenManager.getInstance(requireContext())
+        val currentUserId = tokenManager.getUserId() ?: ""
+        
+        conversationAdapter = ConversationAdapter({ conversation ->
             onConversationClick(conversation)
-        }
+        }, currentUserId)
 
         binding.conversationsRecyclerView.apply {
             layoutManager = LinearLayoutManager(context)
@@ -167,8 +168,9 @@ class ChatFragment : Fragment() {
     }
 
     private fun setupChatRoomUI(binding: FragmentChatRoomBinding) {
-        // Không cần gán _chatRoomBinding ở đây nữa vì đã gán trong onCreateView
-
+        // Ẩn bottom navigation khi vào chat room
+        hideBottomNavigation()
+        
         binding.contactName.text = conversationName ?: userName ?: "Chat"
 
         val avatarUrl = conversationThumbnail ?: userAvatar
@@ -182,8 +184,9 @@ class ChatFragment : Fragment() {
             }
         }
 
+        // Cập nhật xử lý nút back để quay về trang danh sách hội thoại
         binding.backButton.setOnClickListener {
-            parentFragmentManager.popBackStack()
+            navigateBackToConversationList()
         }
 
         setupMessageList(binding)
@@ -461,6 +464,16 @@ class ChatFragment : Fragment() {
         }
     }
 
+    private fun hideBottomNavigation() {
+        val homeFragment = parentFragment?.parentFragment as? com.example.chatapp.ui.home.HomeFragment
+        homeFragment?.setBottomNavigationVisibility(false)
+    }
+
+    private fun showBottomNavigation() {
+        val homeFragment = parentFragment?.parentFragment as? com.example.chatapp.ui.home.HomeFragment
+        homeFragment?.setBottomNavigationVisibility(true)
+    }
+
     override fun onResume() {
         super.onResume()
         
@@ -485,6 +498,11 @@ class ChatFragment : Fragment() {
 
         viewModel.leaveConversation()
 
+        // Hiện lại bottom navigation khi thoát khỏi chat room
+        if (isDirectChat) {
+            showBottomNavigation()
+        }
+
         _fragmentChatBinding = null
         _fragmentChatRoomBinding = null
     }
@@ -495,5 +513,13 @@ class ChatFragment : Fragment() {
             isCurrentlyTyping = false
             viewModel.sendTyping(false)
         }
+    }
+
+    private fun navigateBackToConversationList() {
+        // Hiện lại bottom navigation
+        showBottomNavigation()
+
+        // Quay về fragment danh sách hội thoại
+        parentFragmentManager.popBackStack()
     }
 }

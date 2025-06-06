@@ -62,6 +62,11 @@ class HomeFragment : Fragment() {
         binding.bottomNavigation.selectedItemId = itemId
     }
 
+    // Method to show/hide bottom navigation
+    fun setBottomNavigationVisibility(visible: Boolean) {
+        binding.bottomNavigation.visibility = if (visible) View.VISIBLE else View.GONE
+    }
+
     override fun onDestroyView() {
         super.onDestroyView()
     }

@@ -15,7 +15,8 @@ import java.util.*
 import java.util.TimeZone
 
 class ConversationAdapter(
-    private val onConversationClick: (ConversationResponse) -> Unit
+    private val onConversationClick: (ConversationResponse) -> Unit,
+    private val currentUserId: String = ""
 ) : ListAdapter<ConversationResponse, ConversationAdapter.ConversationViewHolder>(DiffCallback()) {
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ConversationViewHolder {
@@ -37,20 +38,21 @@ class ConversationAdapter(
             val otherMember = conversation.members.firstOrNull()
             
             // Hiển thị tên
-            binding.contactName.text = otherMember?.username ?: "Unknown"
-            
-            // Hiển thị tin nhắn cuối cùng
+            binding.contactName.text = otherMember?.username ?: "Unknown"            // Hiển thị tin nhắn cuối cùng
             if (conversation.lastMessage != null) {
                 val lastMsg = conversation.lastMessage
+                val isCurrentUser = lastMsg.sender.id.toString() == currentUserId
+                val senderPrefix = if (isCurrentUser) "Bạn" else lastMsg.sender.username
+                
                 when (lastMsg.messageType) {
                     "image" -> {
-                        binding.lastMessage.text = "📷 Hình ảnh"
+                        binding.lastMessage.text = "$senderPrefix: 📷 Hình ảnh"
                     }
                     "file" -> {
-                        binding.lastMessage.text = "📎 File đính kèm"
+                        binding.lastMessage.text = "$senderPrefix: 📎 File đính kèm"
                     }
                     else -> {
-                        binding.lastMessage.text = lastMsg.content
+                        binding.lastMessage.text = "$senderPrefix: ${lastMsg.content}"
                     }
                 }
                 // Hiển thị thời gian tin nhắn cuối
