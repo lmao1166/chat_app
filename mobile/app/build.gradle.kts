@@ -4,8 +4,8 @@ plugins {
     alias(libs.plugins.kotlin.compose)
     id("kotlin-kapt")
     id("org.jetbrains.kotlin.plugin.serialization") version "2.0.21"
-}
 
+}
 android {
     namespace = "com.example.chatapp"
     compileSdk = 35
