@@ -1,5 +1,7 @@
 const messageRepository = require('../repositories/message.repository');
 const conversationRepository = require('../repositories/conversation.repository');
+const memberRepository = require('../repositories/member.repository');
+const userRepository = require('../repositories/user.repository');
 const socketService = require('./socket.service');
 
 class MessageService {
@@ -33,12 +35,14 @@ class MessageService {
         } catch (error) {
             this._handleError(error, 'Error fetching message');
         }
-    }
-
-    async getMessagesByConversationId(conversationId, options = {}) {
+    }    async getMessagesByConversationId(conversationId, userId, options = {}) {
         try {
             const conversation = await conversationRepository.findById(conversationId);
             if (!conversation) throw this._createError('Cuộc trò chuyện không tồn tại', 404);
+
+            // Kiểm tra xem user có phải là thành viên của cuộc trò chuyện không
+            const isMember = await memberRepository.isUserInConversation(userId, conversationId);
+            if (!isMember) throw this._createError('Bạn không có quyền truy cập cuộc trò chuyện này', 403);
 
             const messages = await messageRepository.findByConversationId(conversationId, options);
             if (!messages || messages.length === 0) return [];
@@ -48,27 +52,63 @@ class MessageService {
         }
     }
 
-
-      async sendMessage(senderId, messageData) {
+    async sendMessage(senderId, messageData) {
         try {
             const conversation = await conversationRepository.findById(messageData.conversation_id);
             if (!conversation) throw this._createError('Cuộc trò chuyện không tồn tại', 404);
 
+            // 1. Lưu tin nhắn vào database TRƯỚC (primary source of truth)
             const newMessage = await messageRepository.create({
                 content: messageData.content.trim(),
                 sender_id: senderId,
                 conversation_id: messageData.conversation_id,
                 timestamp: new Date(),
-                attachment_url: messageData.attachment_url || null
+                attachment_url: messageData.attachment_url || null,
+                message_type: messageData.type || 'text',
+                delivery_status: 'sent' // Đã lưu thành công vào DB
             });
 
-            // Update conversation and get formatted message
-            await conversationRepository.update(messageData.conversation_id, { last_message_at: new Date() });
-            const completeMessage = await messageRepository.findById(newMessage.id);
-            const formattedMessage = this.formatMessage(completeMessage);
+            // 2. Update conversation
+            await conversationRepository.update(messageData.conversation_id, { 
+                last_message_at: new Date() 
+            });
 
-            // Emit real-time event
-            socketService.emitNewMessage(messageData.conversation_id, formattedMessage);
+            // 3. Lấy tin nhắn đầy đủ với thông tin sender
+            const completeMessage = await messageRepository.findById(newMessage.id);
+            const formattedMessage = this.formatMessage(completeMessage);            // 4. Create notifications for conversation members (exclude sender)
+            try {
+                const members = await memberRepository.getConversationMembers(messageData.conversation_id);
+                const senderInfo = await userRepository.findById(senderId);
+                
+                for (const member of members) {
+                    if (member.user_id !== senderId) {  // Don't notify sender
+                        await notificationService.createNotification({
+                            userId: member.user_id,
+                            type: 'new_message',
+                            content: `${senderInfo.username}: ${messageData.content.substring(0, 50)}${messageData.content.length > 50 ? '...' : ''}`,
+                            relatedEntityId: newMessage.id
+                        });
+                    }
+                }
+            } catch (notificationError) {
+                console.warn('Notification creation failed:', notificationError.message);
+            }
+
+            // 5. Emit real-time event (secondary, not critical)
+            try {
+                socketService.emitNewMessage(messageData.conversation_id, formattedMessage);
+                
+                // Cập nhật delivery status nếu emit thành công
+                await messageRepository.update(newMessage.id, {
+                    delivery_status: 'delivered'
+                });
+                
+                console.log(`Message ${newMessage.id} delivered via Socket.IO`);
+            } catch (socketError) {
+                console.warn('Socket emit failed, but message saved:', socketError.message);
+                // Message vẫn được lưu, chỉ real-time bị lỗi
+            }
+
             return formattedMessage;
         } catch (error) {
             this._handleError(error, 'Error sending message');
@@ -111,21 +151,22 @@ class MessageService {
         } catch (error) {
             this._handleError(error, 'Error deleting message');
         }
-    }
-
-    formatMessage(message) {
+    }    formatMessage(message) {
+        const domain = process.env.DOMAIN || 'localhost:3000';
         return {
-            id: message.message_id,
+            id: message.id,
             content: message.content,
             timestamp: message.timestamp,
-            type: message.type,
-            attachment_url: message.attachment_url,
+            type: message.type || message.message_type,
+            attachment_url: message.attachment_url && message.attachment_url !== 'null' ? message.attachment_url : null,
+            delivery_status: message.delivery_status || 'sent',
             deleted_by_sender: message.deleted_by_sender,
             sender: message.sender ? {
                 id: message.sender.id,
                 username: message.sender.username,
-                email: message.sender.email,
-                profilePicUrl: message.sender.profilePicUrl,
+                profilePicUrl: message.sender.profilePicUrl ? 
+                    `http://${domain}/api/v1/uploads/profiles/${message.sender.profilePicUrl}` : 
+                    null,
             } : null
         };
     }

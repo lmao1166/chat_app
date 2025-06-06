@@ -5,11 +5,17 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.Fragment
 import com.example.chatapp.ui.auth.login.LoginFragment
 import com.example.chatapp.ui.home.HomeFragment
+import com.example.chatapp.ui.home.chat.ChatFragment
+import com.example.chatapp.ui.home.contacts.ContactsFragment
+import com.example.chatapp.ui.home.profile.ProfileFragment
 
 class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
+
+        // Initialize authentication for API requests
+        initializeAuthentication()
 
         // Only load fragment if this is the first time the activity is created
         if (savedInstanceState == null) {
@@ -17,21 +23,24 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    private fun initializeAuthentication() {
+        // Update Retrofit with the authentication token (if available)
+        RetrofitInstance.updateWithToken(applicationContext)
+    }
+
     private fun handleNavigation() {
         val navigateTo = intent.getStringExtra("navigate_to")
         
         when (navigateTo) {
             "home" -> {
-                // Chuyển thẳng đến HomeFragment (đã đăng nhập)
                 supportFragmentManager.beginTransaction()
                     .replace(R.id.fragment_container, HomeFragment())
-                    .commit()
+                    .commitAllowingStateLoss()
             }
             "login", null -> {
-                // Chuyển đến LoginFragment (chưa đăng nhập hoặc token hết hạn)
                 supportFragmentManager.beginTransaction()
                     .replace(R.id.fragment_container, LoginFragment())
-                    .commit()
+                    .commitAllowingStateLoss()
             }
         }
     }
@@ -45,6 +54,7 @@ class MainActivity : AppCompatActivity() {
             transaction.addToBackStack(null)
         }
 
-        transaction.commit()
+        transaction.commitAllowingStateLoss()
     }
+
 }

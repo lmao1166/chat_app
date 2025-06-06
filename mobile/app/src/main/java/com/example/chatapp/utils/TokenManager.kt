@@ -101,4 +101,44 @@ class TokenManager(context: Context) {
             apply()
         }
     }
+
+    /**
+     * Lấy user ID từ access token đã lưu.
+     * @return User ID hoặc null nếu không thể lấy được.
+     */
+    fun getUserId(): String? {
+        val accessToken = getAccessToken()
+        return if (accessToken != null) {
+            extractUserIdFromToken(accessToken)
+        } else {
+            null
+        }
+    }
+
+    /**
+     * Trích xuất user ID từ JWT token
+     * @param token JWT token
+     * @return User ID hoặc null nếu không thể trích xuất được
+     */
+    private fun extractUserIdFromToken(token: String): String? {
+        return try {
+            val parts = token.split(".")
+            if (parts.size != 3) {
+                Log.w("TokenManager", "Invalid JWT token format")
+                return null
+            }
+
+            val payload = parts[1]
+            val decodedBytes = android.util.Base64.decode(payload, android.util.Base64.URL_SAFE)
+            val decodedString = String(decodedBytes)
+            val jsonObject = JSONObject(decodedString)
+            
+            val userId = jsonObject.optString("userId", null.toString())
+            Log.d("TokenManager", "Extracted user ID: $userId")
+            userId
+        } catch (e: Exception) {
+            Log.e("TokenManager", "Error extracting user ID from token", e)
+            null
+        }
+    }
 }

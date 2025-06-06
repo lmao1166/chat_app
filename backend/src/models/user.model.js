@@ -26,10 +26,10 @@ const User = database.sequelize.define('User', {
         allowNull: true,
         defaultValue: '/api/v1/uploads/profiles/default-avatar.png'
     },
-    last_seen:{
-        type: DataTypes.DATE,
-        allowNull: true
-    },
+    // last_seen:{
+    //     type: DataTypes.DATE,
+    //     allowNull: true
+    // },
 
 }, {
     tableName: 'users',

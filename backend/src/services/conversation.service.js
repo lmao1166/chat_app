@@ -18,33 +18,60 @@ class ConversationService {
             if( user1.id === user2.id) {
                 const error = new Error('Không thể tạo cuộc trò chuyện với chính mình');
                 error.statusCode = 400;
-            }
-
-            const existingConversation = await conversationRepository.findPrivateConversations(userId, memberData.userId2);
+            }            const existingConversation = await conversationRepository.findPrivateConversations(userId, memberData.userId2);
             if (existingConversation) {
-                const { members, ...conversationData } = existingConversation.toJSON();
-                return conversationData;
+                const conversationData = existingConversation.toJSON();
+                
+                // Set thumbnail to the other member's profile picture
+                const otherMember = conversationData.members.find(member => member.id !== userId);
+                if (otherMember && otherMember.profilePicUrl) {
+                    const fullProfileUrl = `http://192.168.1.10:3000/api/v1/uploads/profiles/${otherMember.profilePicUrl}`;
+                    conversationData.thumbnail = fullProfileUrl;
+                    
+                    // Also update the member's profilePicUrl to full URL
+                    conversationData.members.forEach(member => {
+                        if (member.profilePicUrl) {
+                            member.profilePicUrl = `http://192.168.1.10:3000/api/v1/uploads/profiles/${member.profilePicUrl}`;
+                        }
+                    });
+                }
+                
+                const { members, ...responseData } = conversationData;
+                return responseData;
             }
 
             const newConversation = await conversationRepository.create({
                 type: 'private',
                 name: null
-            });
-            await memberRepository.bulkCreate([
+            });            await memberRepository.bulkCreate([
                 { conversation_id: newConversation.id, user_id: user1.id, joined_at: new Date() },
                 { conversation_id: newConversation.id, user_id: user2.id, joined_at: new Date() }
-            ])
+            ]);
 
             const createdConversationWithMembers = await conversationRepository.findById(newConversation.id, {
                 include: [{
                     model: User,
                     as: 'members',
-                    attributes: ['id', 'username', 'email']
+                    attributes: ['id', 'username', 'email', 'profilePicUrl']
                 }]
-            });
-
-            const { members, ...conversationData } = createdConversationWithMembers.toJSON();
-            return conversationData;
+            });            const conversationData = createdConversationWithMembers.toJSON();
+            
+            // Set thumbnail to the other member's profile picture
+            const otherMember = conversationData.members.find(member => member.id !== userId);
+            if (otherMember && otherMember.profilePicUrl) {
+                const fullProfileUrl = `http://192.168.1.10:3000/api/v1/uploads/profiles/${otherMember.profilePicUrl}`;
+                conversationData.thumbnail = fullProfileUrl;
+                
+                // Also update the member's profilePicUrl to full URL
+                conversationData.members.forEach(member => {
+                    if (member.profilePicUrl) {
+                        member.profilePicUrl = `http://192.168.1.10:3000/api/v1/uploads/profiles/${member.profilePicUrl}`;
+                    }
+                });
+            }
+            
+            const { members, ...responseData } = conversationData;
+            return responseData;
 
         } catch (error) {
             console.error('Error in findOrCreateConversation:', error);
@@ -72,19 +99,31 @@ class ConversationService {
             console.error('Error in getConversationById:', error);
             throw new Error('Không thể lấy cuộc trò chuyện: ' + error.message);
         }
-    }
-
+    }    
+    
     async getConversationsByUserId(userId) {
         try {
-            const conversations = await conversationRepository.findByUserId(userId, {
-                include: [{
-                    model: User,
-                    as: 'members',
-                    attributes: ['id', 'username', 'email']
-                }]
-            });
+            const conversations = await conversationRepository.findByUserId(userId);
 
-            return conversations.map(conversation => conversation.toJSON());
+            return conversations.map(conversation => {
+                // Repository already returns plain objects, no need to call toJSON()
+                const conversationData = conversation;
+                
+                // Set thumbnail to the member's profile picture (for private conversations)
+                if (conversationData.type === 'private' && conversationData.members.length > 0) {
+                    const member = conversationData.members[0];
+                    if (member.profilePicUrl) {
+                        // Add full URL prefix for the profile picture
+                        const fullProfileUrl = `http://192.168.1.10:3000/api/v1/uploads/profiles/${member.profilePicUrl}`;
+                        conversationData.thumbnail = fullProfileUrl;
+                        
+                        // Also update the member's profilePicUrl to full URL
+                        member.profilePicUrl = fullProfileUrl;
+                    }
+                }
+                
+                return conversationData;
+            });
         } catch (error) {
             console.error('Error in getConversationsByUserId:', error);
             throw new Error('Không thể lấy cuộc trò chuyện của người dùng: ' + error.message);

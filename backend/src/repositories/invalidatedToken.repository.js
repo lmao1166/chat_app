@@ -23,8 +23,9 @@ class InvalidatedTokenRepository {
         } catch (error) {
             throw new Error('Error finding invalidated token: ' + error.message);
         }
-    }
-
+    }    
+    
+    
     async isTokenInvalidated(token) {
         try {
             const tokenRecord = await this.findByToken(token);
@@ -33,8 +34,9 @@ class InvalidatedTokenRepository {
             }
             
             // Kiểm tra nếu token đã hết hạn
+            // Token được coi là vô hiệu hóa (invalidated) nếu hiện tại > thời gian hết hạn
             const now = new Date();
-            return now <= tokenRecord.expiry_time;
+            return now > tokenRecord.expiry_time;
         } catch (error) {
             throw new Error('Error checking token status: ' + error.message);
         }

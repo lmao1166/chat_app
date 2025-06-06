@@ -4,7 +4,6 @@ const User = require('./user.model');
 const Conversation = require('./conversation.model');
 const Message = require('./message.model');
 const ConversationMember = require('./conversationMember.model');
-const Notification = require('./notification.model');
 const InvalidatedToken = require('./invalidatedToken.model');
 
 // --- Định nghĩa Quan hệ (Associations) ---
@@ -52,16 +51,7 @@ ConversationMember.belongsTo(Message, {
     onDelete: 'SET NULL'
 });
 
-// 5. User - Notification (One-to-Many)
-User.hasMany(Notification, {
-    foreignKey: 'user_id',
-    as: 'notifications',
-    onDelete: 'CASCADE'
-});
-Notification.belongsTo(User, {
-    foreignKey: 'user_id',
-    as: 'user'
-});
+
 
 // 6. User - InvalidatedToken (One-to-Many)
 User.hasMany(InvalidatedToken, {
@@ -81,6 +71,5 @@ module.exports = {
     Conversation,
     Message,
     ConversationMember,
-    Notification,
     InvalidatedToken
 };

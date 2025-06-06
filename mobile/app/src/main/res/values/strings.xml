@@ -13,9 +13,9 @@
     <string name="title_activity_log_in">activity_log_in</string>
     <string name="name">Name</string>
     <string name="email">Email</string>
-    <string name="password">Password</string>
+    <string name="password">Mật khẩu</string>
     <string name="log_in">LOG IN</string>
-    <string name="sign_in">SIGN IN</string>
+    <string name="sign_in">Đăng nhập</string>
     <item name="app_logo" type="id" />
     <item name="edt_email" type="id" />
     <item name="edt_password" type="id" />
@@ -28,6 +28,9 @@
     <!-- TODO: Remove or change this placeholder text -->
     <string name="hello_blank_fragment">Hello blank fragment</string>
     <string name="logout">Log Out</string>
-    <string name="signup">Sign Up</string>
+    <string name="signup">Đăng ký</string>
+    <string name="confirm_password">Nhập lại mật khẩu</string>
+    <string name="alreadyHaveAccount">Đã có tài khoản?</string>
+    <string name="account">tài khoản</string>
 
 </resources>

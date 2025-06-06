@@ -48,13 +48,27 @@ const register = async (req, res, next) => { //post
 
 const updateUser = async (req, res, next) => { //put 
     try {
-        const userId = req.user.userId;;
+        const userId = req.user.userId;
         const userData = req.body;
-          // Check if a new profile picture was uploaded
+        
+        console.log('Update user request:', {
+            userId,
+            userData,
+            files: req.files
+        });
+        
+        // Check if a new profile picture was uploaded
         let profilePicUrl = null;
-        if (req.file) {
+        if (req.files && req.files.profilePicture && req.files.profilePicture[0]) {
+            const uploadedFile = req.files.profilePicture[0];
             // Chỉ lưu tên file, không lưu đường dẫn đầy đủ
-            profilePicUrl = FileUtils.extractFileName(req.file.filename);
+            profilePicUrl = FileUtils.extractFileName(uploadedFile.filename);
+            
+            console.log('Profile picture uploaded:', {
+                filename: uploadedFile.filename,
+                originalname: uploadedFile.originalname,
+                size: uploadedFile.size
+            });
         }
         
         // Add profile picture URL to user data if a new one was uploaded
@@ -62,7 +76,7 @@ const updateUser = async (req, res, next) => { //put
             userData.profilePicUrl = profilePicUrl;
         }
         
-        const updatedUser = await userService.updateUser(userId, userData);
+        const updatedUser = await userService.changeUserProfile(userId, userData);
 
         res.status(200).json({
             status: 200,
@@ -74,6 +88,24 @@ const updateUser = async (req, res, next) => { //put
         next(error);
     }
 };
+
+const changePassword = async (req, res, next) => { 
+    try {
+        const userId = req.user.userId;
+        const passwordData = req.body;
+
+        const updatedUser = await userService.changePassword(userId, passwordData);
+
+        res.status(200).json({
+            status: 200,
+            success: true,
+            data: updatedUser,
+            message: 'Đổi mật khẩu thành công'
+        });
+    } catch (error) {
+        next(error);
+    }
+}
 
 const deleteUser = async (req, res, next) => { //delete
     try {
@@ -117,5 +149,6 @@ module.exports = {
     register,
     updateUser,
     deleteUser,
-    getOnlineUsers
+    getOnlineUsers,
+    changePassword,
 };

@@ -7,7 +7,7 @@ const { authenticateToken } = require('../middlewares/auth.middlewares');
 
 // router.get('/:id', authenticateToken, conversationController.getConversationById); // Lấy cuộc trò chuyện theo ID
 
-router.get('/user', authenticateToken, conversationController.getConservationsByUserId); 
+router.get('/user', authenticateToken, conversationController.getConversations); 
 
 router.post('/', authenticateToken, conversationController.findOrCreateConversation); // Tạo hoặc tìm cuộc trò chuyện
 

@@ -64,8 +64,7 @@ app.get('/api/v1/', (req, res) => {
         'POST /api/v1/messages': 'Send message (requires token)',
         'PUT /api/v1/messages/:id': 'Update message (requires token)',
         'DELETE /api/v1/messages/:id': 'Delete message (requires token)'
-      },
-      conversations: {
+      },      conversations: {
         'GET /api/v1/conversations': 'Get conversations (requires token)',
         'POST /api/v1/conversations': 'Create conversation (requires token)'
       }
