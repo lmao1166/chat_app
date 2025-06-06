@@ -64,10 +64,16 @@ app.get('/api/v1/', (req, res) => {
         'POST /api/v1/messages': 'Send message (requires token)',
         'PUT /api/v1/messages/:id': 'Update message (requires token)',
         'DELETE /api/v1/messages/:id': 'Delete message (requires token)'
-      },
-      conversations: {
+      },      conversations: {
         'GET /api/v1/conversations': 'Get conversations (requires token)',
         'POST /api/v1/conversations': 'Create conversation (requires token)'
+      },
+      notifications: {
+        'GET /api/v1/notifications': 'Get user notifications (requires token)',
+        'GET /api/v1/notifications/unread-count': 'Get unread count (requires token)',
+        'PUT /api/v1/notifications/:id/read': 'Mark as read (requires token)',
+        'PUT /api/v1/notifications/mark-all-read': 'Mark all as read (requires token)',
+        'DELETE /api/v1/notifications/:id': 'Delete notification (requires token)'
       }
     }
   });
@@ -77,6 +83,7 @@ app.get('/api/v1/', (req, res) => {
 app.use('/api/v1/users', userRouter)
 app.use('/api/v1/conversations', conversationRouter)
 app.use('/api/v1/messages', messageRouter)
+app.use('/api/v1/notifications', require('./routes/notification.routes'))
 app.use('/api/v1/auth', authRouter);
 app.use('/api/v1/uploads', uploadRouter);
 // app.use('/api/v1/notifications', notificationRouter);

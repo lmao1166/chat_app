@@ -52,6 +52,16 @@ ConversationMember.belongsTo(Message, {
     onDelete: 'SET NULL'
 });
 
+// 5. User - Notification (One-to-Many)
+User.hasMany(Notification, {
+    foreignKey: 'user_id',
+    as: 'notifications',
+    onDelete: 'CASCADE'
+});
+Notification.belongsTo(User, {
+    foreignKey: 'user_id',
+    as: 'user'
+});
 
 // 6. User - InvalidatedToken (One-to-Many)
 User.hasMany(InvalidatedToken, {

@@ -3,13 +3,20 @@ const { DataTypes } = require('sequelize');
 const { sequelize } = require('../configs/database');
 
 const Notification = sequelize.define('Notification', {
-    notification_id: {
-        type: DataTypes.INTEGER, // <-- Đổi từ UUID sang INTEGER
-        autoIncrement: true,     // <-- Tự động tăng
+    id: {
+        type: DataTypes.INTEGER,
+        autoIncrement: true,    
         primaryKey: true,
         unique: true
     },
-    // user_id sẽ là INTEGER do quan hệ
+    user_id: {
+        type: DataTypes.INTEGER,
+        allowNull: false,
+        references: {
+            model: 'users',
+            key: 'id'
+        }
+    },
     type: {
         type: DataTypes.STRING(255),
         allowNull: false
@@ -23,7 +30,7 @@ const Notification = sequelize.define('Notification', {
         defaultValue: false
     },
     related_entity_id: {
-        type: DataTypes.INTEGER, // <-- Thay đổi thành INTEGER để khớp với các ID khác
+        type: DataTypes.INTEGER,
         allowNull: true
     }
 }, {

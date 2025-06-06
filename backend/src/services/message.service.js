@@ -1,6 +1,8 @@
 const messageRepository = require('../repositories/message.repository');
 const conversationRepository = require('../repositories/conversation.repository');
 const memberRepository = require('../repositories/member.repository');
+const userRepository = require('../repositories/user.repository');
+const notificationService = require('./notification.service');
 const socketService = require('./socket.service');
 
 class MessageService {
@@ -74,9 +76,26 @@ class MessageService {
 
             // 3. Lấy tin nhắn đầy đủ với thông tin sender
             const completeMessage = await messageRepository.findById(newMessage.id);
-            const formattedMessage = this.formatMessage(completeMessage);
+            const formattedMessage = this.formatMessage(completeMessage);            // 4. Create notifications for conversation members (exclude sender)
+            try {
+                const members = await memberRepository.getConversationMembers(messageData.conversation_id);
+                const senderInfo = await userRepository.findById(senderId);
+                
+                for (const member of members) {
+                    if (member.user_id !== senderId) {  // Don't notify sender
+                        await notificationService.createNotification({
+                            userId: member.user_id,
+                            type: 'new_message',
+                            content: `${senderInfo.username}: ${messageData.content.substring(0, 50)}${messageData.content.length > 50 ? '...' : ''}`,
+                            relatedEntityId: newMessage.id
+                        });
+                    }
+                }
+            } catch (notificationError) {
+                console.warn('Notification creation failed:', notificationError.message);
+            }
 
-            // 4. Emit real-time event (secondary, not critical)
+            // 5. Emit real-time event (secondary, not critical)
             try {
                 socketService.emitNewMessage(messageData.conversation_id, formattedMessage);
                 

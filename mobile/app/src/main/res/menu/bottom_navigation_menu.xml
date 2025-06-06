@@ -5,12 +5,16 @@
         android:id="@+id/nav_chat"
         android:icon="@drawable/ic_chat"
         android:title="Chat"
-        tools:ignore="HardcodedText" />
-
-    <item
+        tools:ignore="HardcodedText" />    <item
         android:id="@+id/nav_contacts"
         android:icon="@drawable/ic_contacts"
         android:title="Danh bạ"
+        tools:ignore="HardcodedText" />
+
+    <item
+        android:id="@+id/nav_notifications"
+        android:icon="@drawable/ic_notifications"
+        android:title="Thông báo"
         tools:ignore="HardcodedText" />
 
     <item

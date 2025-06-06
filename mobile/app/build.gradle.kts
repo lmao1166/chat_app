@@ -69,7 +69,6 @@ dependencies {
 
     // CircleImageView library
     implementation(libs.circleimageview)
-
     // Additional dependencies using version catalog
     implementation(libs.androidx.recyclerview)
     implementation(libs.material)
@@ -83,7 +82,9 @@ dependencies {
     implementation(libs.okhttp.logging)
     implementation(libs.retrofit.kotlinx.serialization)
     implementation(libs.kotlinx.serialization.json)
-    implementation(libs.retrofit.converter.gson)    // Coroutines
+    implementation(libs.retrofit.converter.gson)
+
+    // Coroutines
     implementation(libs.kotlinx.coroutines.core)
     implementation(libs.kotlinx.coroutines.android)
 
@@ -92,4 +93,7 @@ dependencies {
 
     // AndroidX components
     implementation(libs.androidx.fragment.ktx)
+
+    // SwipeRefreshLayout for pull-to-refresh functionality
+    implementation(libs.androidx.swiperefreshlayout)
 }

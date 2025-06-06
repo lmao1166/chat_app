@@ -19,6 +19,7 @@ import com.example.chatapp.databinding.FragmentChatBinding
 import com.example.chatapp.databinding.FragmentChatRoomBinding
 import com.example.chatapp.model.response.ConversationResponse
 import com.example.chatapp.utils.TokenManager
+import com.example.chatapp.ui.home.chat.ChatViewModel
 
 class ChatFragment : Fragment() {
     private var _binding: Any? = null

@@ -6,21 +6,29 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.databinding.DataBindingUtil
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.ViewModelProvider
 import com.example.chatapp.R
 import com.example.chatapp.databinding.FragmentHomeBinding
 import com.example.chatapp.ui.home.chat.ChatFragment
 import com.example.chatapp.ui.home.contacts.ContactsFragment
 import com.example.chatapp.ui.home.profile.ProfileFragment
+import com.example.chatapp.ui.notification.NotificationFragment
+import com.example.chatapp.utils.NotificationBadgeHelper
+import com.example.chatapp.viewmodel.NotificationViewModel
 
 class HomeFragment : Fragment() {
     private lateinit var binding: FragmentHomeBinding
+    private lateinit var notificationViewModel: NotificationViewModel
+    private var badgeHelper: NotificationBadgeHelper? = null
 
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
         savedInstanceState: Bundle?
-    ): View {
-        binding = DataBindingUtil.inflate(inflater, R.layout.fragment_home, container, false)
+    ): View {        binding = DataBindingUtil.inflate(inflater, R.layout.fragment_home, container, false)
+
+        // Initialize notification ViewModel
+        notificationViewModel = ViewModelProvider(this)[NotificationViewModel::class.java]
 
         // Set initial fragment
         if (savedInstanceState == null) {
@@ -28,6 +36,7 @@ class HomeFragment : Fragment() {
         }
 
         setupBottomNavigation()
+        setupNotificationBadge()
         return binding.root
     }
 
@@ -37,9 +46,12 @@ class HomeFragment : Fragment() {
                 R.id.nav_chat -> {
                     loadFragment(ChatFragment())
                     return@setOnItemSelectedListener true
-                }
-                R.id.nav_contacts -> {
+                }                R.id.nav_contacts -> {
                     loadFragment(ContactsFragment())
+                    return@setOnItemSelectedListener true
+                }
+                R.id.nav_notifications -> {
+                    loadFragment(NotificationFragment())
                     return@setOnItemSelectedListener true
                 }
                 R.id.nav_profile -> {
@@ -48,7 +60,15 @@ class HomeFragment : Fragment() {
                 }
             }
             false
-        }
+        }    }
+
+    private fun setupNotificationBadge() {
+        badgeHelper = NotificationBadgeHelper(
+            binding.bottomNavigation,
+            notificationViewModel,
+            viewLifecycleOwner
+        )
+        badgeHelper?.setupBadge()
     }
 
     fun loadFragment(fragment: Fragment) {
@@ -60,5 +80,11 @@ class HomeFragment : Fragment() {
     // Method to highlight a specific navigation item
     fun selectNavigationItem(itemId: Int) {
         binding.bottomNavigation.selectedItemId = itemId
+    }
+
+    override fun onDestroyView() {
+        super.onDestroyView()
+        badgeHelper?.removeBadge()
+        badgeHelper = null
     }
 }
