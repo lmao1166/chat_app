@@ -6,29 +6,7 @@
     <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:padding="8dp">        <LinearLayout
-            android:id="@+id/attachmentContainer"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_marginEnd="16dp"
-            android:orientation="vertical"
-            android:visibility="gone"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="@+id/messageContainer"
-            app:layout_constraintTop_toTopOf="parent">
-            
-            <ImageView
-                android:id="@+id/attachmentImage"
-                android:layout_width="match_parent"
-                android:layout_height="200dp"
-                android:scaleType="centerCrop"
-                android:background="@drawable/message_sent_background"
-                android:layout_marginBottom="4dp"
-                android:contentDescription="Attached image" />
-                
-        </LinearLayout>
-
-        <androidx.constraintlayout.widget.ConstraintLayout
+        android:padding="8dp">        <androidx.constraintlayout.widget.ConstraintLayout
             android:id="@+id/messageContainer"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
@@ -39,7 +17,28 @@
             android:padding="12dp"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/attachmentContainer">
+            app:layout_constraintTop_toTopOf="parent">
+
+            <LinearLayout
+                android:id="@+id/attachmentContainer"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:visibility="gone"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent">
+                
+                <ImageView
+                    android:id="@+id/attachmentImage"
+                    android:layout_width="match_parent"
+                    android:layout_height="200dp"
+                    android:scaleType="centerCrop"
+                    android:layout_marginBottom="8dp"
+                    android:background="@drawable/circle_background"
+                    android:contentDescription="Attached image" />
+                    
+            </LinearLayout>
 
             <TextView
                 android:id="@+id/messageContent"
@@ -49,7 +48,7 @@
                 android:textSize="16sp"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintTop_toBottomOf="@+id/attachmentContainer"
                 tools:text="Hello, how are you?" />
 
             <TextView

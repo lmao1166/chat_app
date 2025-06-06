@@ -341,8 +341,8 @@ class SocketManager private constructor() {
       // Event handlers
     private val onConnect = Emitter.Listener {
         isConnected = true
-        Log.d(TAG, "Socket connected successfully")
-        
+        Log.d(TAG, "Socket connected successfully - DEBUG CHECK")
+
         // Tự động rejoin conversation nếu có conversation đang active
         currentConversationId?.let { conversationId ->
             Log.d(TAG, "Rejoining conversation after reconnect: $conversationId")

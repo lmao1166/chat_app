@@ -159,7 +159,7 @@ class MessageService {
             content: message.content,
             timestamp: message.timestamp,
             type: message.type || message.message_type,
-            attachment_url: message.attachment_url,
+            attachment_url: message.attachment_url && message.attachment_url !== 'null' ? message.attachment_url : null,
             delivery_status: message.delivery_status || 'sent',
             deleted_by_sender: message.deleted_by_sender,
             sender: message.sender ? {

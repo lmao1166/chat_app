@@ -20,19 +20,26 @@ import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.chatapp.R
-import com.example.chatapp.databinding.FragmentChatBinding
-import com.example.chatapp.databinding.FragmentChatRoomBinding
+import com.example.chatapp.databinding.FragmentChatBinding // Giữ nguyên cho layout danh sách chat
+import com.example.chatapp.databinding.FragmentChatRoomBinding // Giữ nguyên cho layout phòng chat
 import com.example.chatapp.model.response.ConversationResponse
 import com.example.chatapp.utils.TokenManager
-import com.example.chatapp.ui.home.chat.ChatViewModel
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.MultipartBody
 import okhttp3.RequestBody.Companion.asRequestBody
 import java.io.File
 
 class ChatFragment : Fragment() {
-    private var _binding: Any? = null
-    private var _chatRoomBinding: FragmentChatRoomBinding? = null
+
+    // Khai báo binding an toàn hơn
+    private var _fragmentChatBinding: FragmentChatBinding? = null
+    // Chỉ truy cập _fragmentChatBinding khi nó đã được gán giá trị và không null
+    private val binding get() = _fragmentChatBinding!!
+
+    private var _fragmentChatRoomBinding: FragmentChatRoomBinding? = null
+    // Chỉ truy cập _fragmentChatRoomBinding khi nó đã được gán giá trị và không null
+    private val chatRoomBinding get() = _fragmentChatRoomBinding!!
+
     private val isDirectChat by lazy { arguments?.getBoolean("isDirectChat", false) ?: false }
     private val userId by lazy { arguments?.getInt("userId", -1) }
     private val userName by lazy { arguments?.getString("userName") }
@@ -44,7 +51,7 @@ class ChatFragment : Fragment() {
     private lateinit var conversationAdapter: ConversationAdapter
     private lateinit var messageAdapter: MessageAdapter
     private lateinit var viewModel: ChatViewModel
-    
+
     // Typing indicator
     private var typingHandler: Handler? = null
     private var typingRunnable: Runnable? = null
@@ -66,53 +73,44 @@ class ChatFragment : Fragment() {
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
-        // Initialize ViewModel
         viewModel = ViewModelProvider(this)[ChatViewModel::class.java]
 
         return if (isDirectChat) {
-            // This is a direct chat initiated from user profile - use chat_room layout
-            val chatRoomBinding = DataBindingUtil.inflate<FragmentChatRoomBinding>(
+            val chatRoomBindingInflated = DataBindingUtil.inflate<FragmentChatRoomBinding>(
                 inflater, R.layout.fragment_chat_room, container, false
             )
-            _binding = chatRoomBinding
-            setupChatRoomUI(chatRoomBinding)
-            chatRoomBinding.root
+            _fragmentChatRoomBinding = chatRoomBindingInflated // Gán vào biến _fragmentChatRoomBinding
+            setupChatRoomUI(chatRoomBindingInflated)
+            chatRoomBindingInflated.root
         } else {
-            // This is a regular chat listing - use the original layout
-            val chatBinding = DataBindingUtil.inflate<FragmentChatBinding>(
+            val chatBindingInflated = DataBindingUtil.inflate<FragmentChatBinding>(
                 inflater, R.layout.fragment_chat, container, false
             )
-            _binding = chatBinding
-            setupChatListUI(chatBinding)
-            chatBinding.root
+            _fragmentChatBinding = chatBindingInflated // Gán vào biến _fragmentChatBinding
+            setupChatListUI(chatBindingInflated)
+            chatBindingInflated.root
         }
     }
 
     private fun setupChatListUI(binding: FragmentChatBinding) {
-        // Initialize RecyclerView and adapter
         conversationAdapter = ConversationAdapter { conversation ->
             onConversationClick(conversation)
         }
-        
+
         binding.conversationsRecyclerView.apply {
             layoutManager = LinearLayoutManager(context)
             adapter = conversationAdapter
         }
-        
-        // Observe ViewModel data
-        setupConversationObservers(binding)
 
-        // Load conversations
+        setupConversationObservers(binding)
         viewModel.loadConversations()
     }
-    
+
     private fun setupConversationObservers(binding: FragmentChatBinding) {
-        // Observe loading state
         viewModel.isLoading.observe(viewLifecycleOwner) { isLoading ->
             binding.progressBar.visibility = if (isLoading) View.VISIBLE else View.GONE
         }
 
-        // Observe error state
         viewModel.error.observe(viewLifecycleOwner) { error ->
             if (error.isNotEmpty()) {
                 Toast.makeText(context, error, Toast.LENGTH_LONG).show()
@@ -120,7 +118,6 @@ class ChatFragment : Fragment() {
             }
         }
 
-        // Observe conversations data
         viewModel.conversations.observe(viewLifecycleOwner) { conversations ->
             if (conversations.isEmpty()) {
                 showEmptyState(binding)
@@ -132,12 +129,11 @@ class ChatFragment : Fragment() {
             }
         }
     }
-    
+
     private fun showEmptyState(binding: FragmentChatBinding) {
         binding.conversationsRecyclerView.visibility = View.GONE
         binding.emptyStateView.visibility = View.VISIBLE
-        
-        // Setup new chat button click listener
+
         binding.newChatButton.setOnClickListener {
             // TODO: Navigate to user selection screen to start new chat
             Log.d("ChatFragment", "New chat button clicked")
@@ -146,24 +142,23 @@ class ChatFragment : Fragment() {
 
     private fun onConversationClick(conversation: ConversationResponse) {
         Log.d("ChatFragment", "Conversation clicked: ${conversation.id}")
-        
-        // Get the other member info
+
         val otherMember = conversation.members.firstOrNull()
-        
-        // Navigate to chat room
+
         val bundle = Bundle().apply {
             putBoolean("isDirectChat", true)
             putInt("userId", otherMember?.id ?: -1)
             putString("userName", otherMember?.username)
             putString("userAvatar", otherMember?.profilePicUrl)
             putInt("conversationId", conversation.id)
+            putString("conversationName", conversation.name) // Truyền conversationName
+            putString("conversationThumbnail", conversation.thumbnail) // Truyền conversationThumbnail
         }
-        
+
         val chatRoomFragment = ChatFragment().apply {
             arguments = bundle
         }
-        
-        // Use activity's fragment manager to replace the entire home fragment
+
         requireActivity().supportFragmentManager.beginTransaction()
             .replace(R.id.fragmentContainer, chatRoomFragment)
             .addToBackStack("chatRoom")
@@ -171,13 +166,10 @@ class ChatFragment : Fragment() {
     }
 
     private fun setupChatRoomUI(binding: FragmentChatRoomBinding) {
-        // Store binding reference for later use
-        _chatRoomBinding = binding
-        
-        // Setup chat room UI with user data - prefer conversationName over userName
+        // Không cần gán _chatRoomBinding ở đây nữa vì đã gán trong onCreateView
+
         binding.contactName.text = conversationName ?: userName ?: "Chat"
 
-        // Load user avatar if available - prefer conversationThumbnail over userAvatar
         val avatarUrl = conversationThumbnail ?: userAvatar
         avatarUrl?.let { url ->
             if (url.isNotEmpty()) {
@@ -189,36 +181,26 @@ class ChatFragment : Fragment() {
             }
         }
 
-        // Setup back button navigation
         binding.backButton.setOnClickListener {
-            // Simply perform back navigation without trying to manipulate the navigation menu
-            // This avoids crashes when the HomeFragment can't be found
             parentFragmentManager.popBackStack()
         }
 
-        // Setup chat message list
         setupMessageList(binding)
-
-        // Configure chat functionality with the user ID
-        setupMessageObservers(binding)        // Load chat history
+        setupMessageObservers(binding)
         loadChatHistory()
-
-        // Initialize message sending functionality
         binding.sendButton.setOnClickListener {
             val message = binding.messageInput.text.toString().trim()
             if (message.isNotEmpty()) {
-                sendMessage(message)
+                sendTextMessage(message)
                 binding.messageInput.text?.clear()
             }
         }
 
-        // Setup typing indicator
-        setupTypingIndicator(binding)        // Setup attachment button for image selection
+        setupTypingIndicator(binding)
         binding.attachmentButton.setOnClickListener {
             openImagePicker()
         }
 
-        // Setup menu button if needed
         binding.menuButton.setOnClickListener {
             // TODO: Show chat options menu
         }
@@ -226,60 +208,54 @@ class ChatFragment : Fragment() {
 
     private fun setupTypingIndicator(binding: FragmentChatRoomBinding) {
         typingHandler = Handler(Looper.getMainLooper())
-        
+
         binding.messageInput.addTextChangedListener(object : TextWatcher {
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
             override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
-            
+
             override fun afterTextChanged(s: Editable?) {
                 val text = s?.toString()?.trim() ?: ""
-                
+
                 if (text.isNotEmpty() && !isCurrentlyTyping) {
-                    // Start typing
                     isCurrentlyTyping = true
                     viewModel.sendTyping(true)
                 }
-                
-                // Cancel previous runnable
+
                 typingRunnable?.let { typingHandler?.removeCallbacks(it) }
-                
-                // Set new runnable to stop typing after 2 seconds of inactivity
+
                 typingRunnable = Runnable {
                     if (isCurrentlyTyping) {
                         isCurrentlyTyping = false
                         viewModel.sendTyping(false)
                     }
                 }
-                
+
                 typingHandler?.postDelayed(typingRunnable!!, 2000)
             }
         })
-    }    private fun setupMessageObservers(binding: FragmentChatRoomBinding) {
-        // Observe loading state
+    }
+
+    private fun setupMessageObservers(binding: FragmentChatRoomBinding) {
         viewModel.isLoading.observe(viewLifecycleOwner) { isLoading ->
             binding.progressBar.visibility = if (isLoading) View.VISIBLE else View.GONE
         }
 
-        // Observe error state
         viewModel.error.observe(viewLifecycleOwner) { error ->
             if (error.isNotEmpty()) {
                 Toast.makeText(context, error, Toast.LENGTH_SHORT).show()
             }
         }
 
-        // Observe messages
         viewModel.messages.observe(viewLifecycleOwner) { messages ->
             val previousCount = messageAdapter.itemCount
             messageAdapter.submitList(messages) {
-                // Callback sau khi danh sách được cập nhật
                 if (messages.isNotEmpty()) {
-                    // Chỉ cuộn đến dưới cùng nếu đang ở gần cuối danh sách hoặc có tin nhắn mới
                     val layoutManager = binding.messagesRecyclerView.layoutManager as LinearLayoutManager
                     val lastVisiblePosition = layoutManager.findLastVisibleItemPosition()
 
-                    if (previousCount == 0 || // Lần đầu tiên tải tin nhắn
-                        messages.size > previousCount || // Có tin nhắn mới
-                        lastVisiblePosition >= previousCount - 3) { // Đang xem gần cuối danh sách
+                    if (previousCount == 0 ||
+                        messages.size > previousCount ||
+                        lastVisiblePosition >= previousCount - 3) {
 
                         binding.messagesRecyclerView.post {
                             binding.messagesRecyclerView.scrollToPosition(messages.size - 1)
@@ -289,11 +265,9 @@ class ChatFragment : Fragment() {
             }
         }
 
-        // Observe typing indicators
         viewModel.typingUsers.observe(viewLifecycleOwner) { typingUsers ->
             updateTypingIndicator(binding, typingUsers)
 
-            // Cuộn lên khi có người đang nhập tin nhắn
             if (typingUsers.isNotEmpty()) {
                 val messageCount = messageAdapter.itemCount
                 if (messageCount > 0) {
@@ -304,17 +278,16 @@ class ChatFragment : Fragment() {
             }
         }
 
-        // Observe online users
         viewModel.onlineUsers.observe(viewLifecycleOwner) { onlineUsers ->
             updateOnlineStatus(binding, onlineUsers)
         }
-    }    private fun updateTypingIndicator(binding: FragmentChatRoomBinding, typingUsers: List<String>) {
+    }
+
+    private fun updateTypingIndicator(binding: FragmentChatRoomBinding, typingUsers: List<String>) {
         if (typingUsers.isEmpty()) {
-            // Hide typing indicator
             binding.typingIndicatorContainer.visibility = View.GONE
             binding.typingIndicator.visibility = View.GONE
         } else {
-            // Show typing indicator
             binding.typingIndicatorContainer.visibility = View.VISIBLE
             binding.typingIndicator.visibility = View.VISIBLE
             binding.typingIndicatorText.text = when (typingUsers.size) {
@@ -326,32 +299,26 @@ class ChatFragment : Fragment() {
     }
 
     private fun updateOnlineStatus(binding: FragmentChatRoomBinding, onlineUsers: List<String>) {
-        // Update online status indicator if user is online
         val isOnline = userName?.let { onlineUsers.contains(it) } ?: false
         binding.onlineIndicator.visibility = if (isOnline) View.VISIBLE else View.GONE
     }
 
     private fun setupMessageList(binding: FragmentChatRoomBinding) {
-        // Get current user ID
         val tokenManager = TokenManager.getInstance(requireContext())
         val currentUserId = tokenManager.getUserId() ?: ""
-        
-        // Initialize MessageAdapter with current user ID
+
         messageAdapter = MessageAdapter(currentUserId)
-        
-        // Setup the RecyclerView for messages
+
         val layoutManager = LinearLayoutManager(context)
-        layoutManager.stackFromEnd = true  // Messages appear from bottom
+        layoutManager.stackFromEnd = true
         layoutManager.reverseLayout = false
-        
+
         binding.messagesRecyclerView.apply {
             this.layoutManager = layoutManager
             adapter = messageAdapter
 
-            // Thêm listener để cuộn tự động khi RecyclerView thay đổi kích thước
             addOnLayoutChangeListener { _, _, _, _, bottom, _, _, _, oldBottom ->
                 if (bottom < oldBottom) {
-                    // Khi bàn phím hiện lên, cuộn đến tin nhắn cuối cùng
                     postDelayed({
                         val messageCount = messageAdapter.itemCount
                         if (messageCount > 0) {
@@ -361,49 +328,37 @@ class ChatFragment : Fragment() {
                 }
             }
         }
-    }    private fun loadChatHistory() {
-        if (conversationId != null) {
-            // Case 1: We have a conversation ID, load messages directly
+    }
+
+    private fun loadChatHistory() {
+        if (conversationId != null && conversationId != -1) {
             viewModel.loadMessages(conversationId!!)
-            // Join the conversation room for real-time updates
             viewModel.joinConversation(conversationId.toString())
-        } else if (userId != null) {
-            // Case 2: No conversation ID but we have a userId - create or get conversation first
-            try {
-                val userIdInt = userId!!.toInt()
-                viewModel.loadOrCreateConversation(userIdInt)
-                
-                // Observe current conversation to join room when it's available
-                viewModel.currentConversation.observe(viewLifecycleOwner) { conversation ->
-                    conversation?.let {
-                        viewModel.joinConversation(it.id.toString())
-                    }
+        } else if (userId != null && userId != -1) {
+            viewModel.loadOrCreateConversation(userId!!)
+
+            viewModel.currentConversation.observe(viewLifecycleOwner) { conversation ->
+                conversation?.let {
+                    viewModel.joinConversation(it.id.toString())
                 }
-            } catch (e: NumberFormatException) {
-                Log.e("ChatFragment", "Invalid user ID: $userId")
-                showEmptyChat("ID người dùng không hợp lệ")
             }
         } else {
-            // Case 3: Neither conversation ID nor user ID available
             Log.e("ChatFragment", "Cannot load messages - no conversation ID or user ID")
             showEmptyChat("Không thể xác định người nhận tin nhắn")
         }
     }
 
-    private fun sendMessage(message: String) {
-        // Get the conversation ID - either directly or from the ViewModel's current conversation
+    private fun sendTextMessage(message: String) {
         val activeConversationId = conversationId ?: viewModel.currentConversation.value?.id
 
         if (activeConversationId != null) {
             viewModel.sendMessage(activeConversationId, message)
 
-            // Đảm bảo RecyclerView cuộn đến tin nhắn mới nhất sau khi gửi
-            _chatRoomBinding?.let { binding ->
-                binding.messagesRecyclerView.post {
-                    val messageCount = messageAdapter.itemCount
-                    if (messageCount > 0) {
-                        binding.messagesRecyclerView.scrollToPosition(messageCount - 1)
-                    }
+            // Sử dụng chatRoomBinding đã được khởi tạo
+            chatRoomBinding.messagesRecyclerView.post {
+                val messageCount = messageAdapter.itemCount
+                if (messageCount > 0) {
+                    chatRoomBinding.messagesRecyclerView.scrollToPosition(messageCount - 1)
                 }
             }
         } else {
@@ -412,9 +367,42 @@ class ChatFragment : Fragment() {
         }
     }
 
-    /**
-     * Opens image picker to select image from gallery
-     */
+    private fun sendImageMessage(imagePart: MultipartBody.Part) {
+        val activeConversationId = conversationId ?: viewModel.currentConversation.value?.id
+
+        if (activeConversationId != null) {
+            viewModel.sendMessageWithImage(activeConversationId, "", imagePart)
+
+            chatRoomBinding.messagesRecyclerView.post {
+                val messageCount = messageAdapter.itemCount
+                if (messageCount > 0) {
+                    chatRoomBinding.messagesRecyclerView.scrollToPosition(messageCount - 1)
+                }
+            }
+        } else {
+            Log.e("ChatFragment", "Cannot send image - no active conversation")
+            Toast.makeText(context, "Không thể gửi hình ảnh - không có cuộc trò chuyện nào đang hoạt động", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    private fun sendTextAndImageMessage(content: String, imagePart: MultipartBody.Part) {
+        val activeConversationId = conversationId ?: viewModel.currentConversation.value?.id
+
+        if (activeConversationId != null) {
+            viewModel.sendMessageWithImage(activeConversationId, content, imagePart)
+
+            chatRoomBinding.messagesRecyclerView.post {
+                val messageCount = messageAdapter.itemCount
+                if (messageCount > 0) {
+                    chatRoomBinding.messagesRecyclerView.scrollToPosition(messageCount - 1)
+                }
+            }
+        } else {
+            Log.e("ChatFragment", "Cannot send text and image - no active conversation")
+            Toast.makeText(context, "Không thể gửi tin nhắn - không có cuộc trò chuyện nào đang hoạt động", Toast.LENGTH_SHORT).show()
+        }
+    }
+
     private fun openImagePicker() {
         val intent = Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI).apply {
             type = "image/*"
@@ -422,20 +410,21 @@ class ChatFragment : Fragment() {
         imagePickerLauncher.launch(intent)
     }
 
-    /**
-     * Handles the selected image and sends it as a message
-     */
     private fun handleSelectedImage(imageUri: Uri) {
         try {
-            // Get file from URI
             val file = getFileFromUri(imageUri)
             if (file != null && file.exists()) {
-                // Create multipart body part for the image
                 val requestFile = file.asRequestBody("image/*".toMediaTypeOrNull())
                 val imagePart = MultipartBody.Part.createFormData("chatImage", file.name, requestFile)
-                
-                // Send message with image
-                sendMessageWithImage("", imagePart) // Empty content for image-only message
+
+                val currentText = _fragmentChatRoomBinding?.messageInput?.text.toString().trim() ?: ""
+
+                if (currentText.isNotEmpty()) {
+                    sendTextAndImageMessage(currentText, imagePart)
+                    _fragmentChatRoomBinding?.messageInput?.text?.clear()
+                } else {
+                    sendImageMessage(imagePart)
+                }
             } else {
                 Toast.makeText(context, "Không thể đọc file hình ảnh", Toast.LENGTH_SHORT).show()
             }
@@ -443,23 +432,19 @@ class ChatFragment : Fragment() {
             Log.e("ChatFragment", "Error handling selected image", e)
             Toast.makeText(context, "Lỗi xử lý hình ảnh: ${e.message}", Toast.LENGTH_SHORT).show()
         }
-    }    /**
-     * Converts URI to File using modern approach
-     */
+    }
+
     private fun getFileFromUri(uri: Uri): File? {
         return try {
             val contentResolver = requireContext().contentResolver
-            
-            // Create temporary file
             val inputStream = contentResolver.openInputStream(uri)
             val tempFile = File.createTempFile("chat_image", ".jpg", requireContext().cacheDir)
-            
+
             inputStream?.use { input ->
                 tempFile.outputStream().use { output ->
                     input.copyTo(output)
                 }
             }
-            
             tempFile
         } catch (e: Exception) {
             Log.e("ChatFragment", "Error getting file from URI", e)
@@ -467,67 +452,33 @@ class ChatFragment : Fragment() {
         }
     }
 
-    /**
-     * Sends a message with image attachment
-     */
-    private fun sendMessageWithImage(content: String, imagePart: MultipartBody.Part) {
-        // Get the conversation ID - either directly or from the ViewModel's current conversation
-        val activeConversationId = conversationId ?: viewModel.currentConversation.value?.id
-
-        if (activeConversationId != null) {
-            viewModel.sendMessageWithImage(activeConversationId, content, imagePart)
-
-            // Ensure RecyclerView scrolls to the newest message after sending
-            _chatRoomBinding?.let { binding ->
-                binding.messagesRecyclerView.post {
-                    val messageCount = messageAdapter.itemCount
-                    if (messageCount > 0) {
-                        binding.messagesRecyclerView.scrollToPosition(messageCount - 1)
-                    }
-                }
-            }
-        } else {
-            Log.e("ChatFragment", "Cannot send message with image - no active conversation")
-            Toast.makeText(context, "Không thể gửi hình ảnh - không có cuộc trò chuyện nào đang hoạt động", Toast.LENGTH_SHORT).show()
+    private fun showEmptyChat(errorMessage: String) {
+        _fragmentChatRoomBinding?.let { binding ->
+            Toast.makeText(context, errorMessage, Toast.LENGTH_SHORT).show()
+            binding.messagesRecyclerView.visibility = View.GONE
+            // Thêm logic hiển thị empty state view nếu có trong layout
         }
     }
 
-    // Helper function to show empty chat or error state
-    private fun showEmptyChat(errorMessage: String) {
-        _chatRoomBinding?.let { binding ->
-            // Show error message via toast
-            Toast.makeText(context, errorMessage, Toast.LENGTH_SHORT).show()
-
-            // If we have an empty state view, show it
-            binding.messagesRecyclerView.visibility = View.GONE
-
-            // You could add an empty state view in your layout like this:
-            // binding.emptyStateView.visibility = View.VISIBLE
-            // binding.emptyStateErrorText.text = errorMessage
-        }
-    }    override fun onDestroyView() {
+    override fun onDestroyView() {
         super.onDestroyView()
-        
-        // Stop typing indicator
+
         if (isCurrentlyTyping) {
             viewModel.sendTyping(false)
         }
-        
-        // Clean up typing handler
+
         typingRunnable?.let { typingHandler?.removeCallbacks(it) }
         typingHandler = null
         typingRunnable = null
-        
-        // Leave conversation room
+
         viewModel.leaveConversation()
-        
-        _binding = null
-        _chatRoomBinding = null
+
+        _fragmentChatBinding = null
+        _fragmentChatRoomBinding = null
     }
 
     override fun onPause() {
         super.onPause()
-        // Stop typing when fragment is paused
         if (isCurrentlyTyping) {
             isCurrentlyTyping = false
             viewModel.sendTyping(false)

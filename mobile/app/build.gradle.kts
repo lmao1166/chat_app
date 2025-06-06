@@ -92,8 +92,9 @@ dependencies {
     implementation(libs.socket.io.client)
 
     // AndroidX components
-    implementation(libs.androidx.fragment.ktx)
-
-    // SwipeRefreshLayout for pull-to-refresh functionality
+    implementation(libs.androidx.fragment.ktx)    // SwipeRefreshLayout for pull-to-refresh functionality
     implementation(libs.androidx.swiperefreshlayout)
+    
+    // PhotoView for zoomable images
+    implementation("com.github.chrisbanes:PhotoView:2.3.0")
 }

@@ -1,5 +1,6 @@
 package com.example.chatapp.ui.home.chat
 
+import android.content.Intent
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -10,6 +11,7 @@ import com.example.chatapp.R
 import com.example.chatapp.databinding.ItemMessageReceivedBinding
 import com.example.chatapp.databinding.ItemMessageSentBinding
 import com.example.chatapp.model.response.MessageResponse
+import com.example.chatapp.ui.imageviewer.ImageViewerActivity
 import com.example.chatapp.utils.TokenManager
 import com.squareup.picasso.Picasso
 import java.text.SimpleDateFormat
@@ -57,29 +59,41 @@ class MessageAdapter(private val currentUserId: String) : ListAdapter<MessageRes
 
     inner class SentMessageViewHolder(private val binding: ItemMessageSentBinding) :
         RecyclerView.ViewHolder(binding.root) {        fun bind(message: MessageResponse) {
-            binding.messageContent.text = message.content
-            binding.messageTime.text = formatTime(message.timestamp)
-            
-            // Handle attachment if available
-            if (message.attachmentUrl != null) {
+            // Handle text content visibility
+            if (message.content.isNotEmpty() && message.content != "📷 Đã gửi một hình ảnh") {
+                binding.messageContent.visibility = View.VISIBLE
+                binding.messageContent.text = message.content
+            } else {
+                binding.messageContent.visibility = View.GONE
+            }
+              binding.messageTime.text = formatTime(message.timestamp)
+              // Handle attachment if available
+            if (!message.attachmentUrl.isNullOrEmpty() && 
+                message.attachmentUrl != "null" && 
+                message.attachmentUrl.startsWith("http")) {
                 binding.attachmentContainer.visibility = View.VISIBLE
                 
                 // Use the existing ImageView from layout
                 val imageView = binding.attachmentImage
 
-                // Load image using Picasso
-                val fullUrl = if (message.attachmentUrl.startsWith("http")) {
-                    message.attachmentUrl
-                } else {
-                    "http://192.168.1.10:3000/api/v1/uploads/chats/${message.attachmentUrl}"
-                }
+                // Backend should return full URL, use it directly
+                val imageUrl = message.attachmentUrl
 
                 Picasso.get()
-                    .load(fullUrl)
+                    .load(imageUrl)
                     .placeholder(R.drawable.ic_image_placeholder)
                     .error(R.drawable.ic_image_error)
                     .into(imageView)
-
+                    
+                // Add click listener to open image viewer
+                imageView.setOnClickListener {
+                    val intent = Intent(binding.root.context, ImageViewerActivity::class.java).apply {
+                        putExtra(ImageViewerActivity.EXTRA_IMAGE_URL, imageUrl)
+                        putExtra(ImageViewerActivity.EXTRA_TITLE, "Hình ảnh của bạn")
+                    }
+                    binding.root.context.startActivity(intent)
+                }
+                    
             } else {
                 binding.attachmentContainer.visibility = View.GONE
             }
@@ -88,7 +102,14 @@ class MessageAdapter(private val currentUserId: String) : ListAdapter<MessageRes
 
     inner class ReceivedMessageViewHolder(private val binding: ItemMessageReceivedBinding) :
         RecyclerView.ViewHolder(binding.root) {        fun bind(message: MessageResponse) {
-            binding.messageContent.text = message.content
+            // Handle text content visibility
+            if (message.content.isNotEmpty() && message.content != "📷 Đã gửi một hình ảnh") {
+                binding.messageContent.visibility = View.VISIBLE
+                binding.messageContent.text = message.content
+            } else {
+                binding.messageContent.visibility = View.GONE
+            }
+            
             binding.messageTime.text = formatTime(message.timestamp)
             binding.senderName.text = message.sender.username
             
@@ -108,27 +129,31 @@ class MessageAdapter(private val currentUserId: String) : ListAdapter<MessageRes
                     .into(binding.senderImage)
             } else {
                 binding.senderImage.setImageResource(R.drawable.default_avatar)
-            }
-
-            // Handle attachment if available
-            if (message.attachmentUrl != null) {
+            }            // Handle attachment if available
+            if (!message.attachmentUrl.isNullOrEmpty() && 
+                message.attachmentUrl != "null" && 
+                message.attachmentUrl.startsWith("http")) {
                 binding.attachmentContainer.visibility = View.VISIBLE
 
                 // Use the existing ImageView from layout
                 val imageView = binding.attachmentImage
 
-                // Load image using Picasso
-                val fullUrl = if (message.attachmentUrl.startsWith("http")) {
-                    message.attachmentUrl
-                } else {
-                    "http://192.168.1.10:3000/api/v1/uploads/chats/${message.attachmentUrl}"
-                }
-
+                // Backend should return full URL, use it directly
+                val imageUrl = message.attachmentUrl
                 Picasso.get()
-                    .load(fullUrl)
+                    .load(imageUrl)
                     .placeholder(R.drawable.ic_image_placeholder)
                     .error(R.drawable.ic_image_error)
                     .into(imageView)
+                    
+                // Add click listener to open image viewer
+                imageView.setOnClickListener {
+                    val intent = Intent(binding.root.context, ImageViewerActivity::class.java).apply {
+                        putExtra(ImageViewerActivity.EXTRA_IMAGE_URL, imageUrl)
+                        putExtra(ImageViewerActivity.EXTRA_TITLE, "Hình ảnh từ ${message.sender.username}")
+                    }
+                    binding.root.context.startActivity(intent)
+                }
 
             } else {
                 binding.attachmentContainer.visibility = View.GONE
