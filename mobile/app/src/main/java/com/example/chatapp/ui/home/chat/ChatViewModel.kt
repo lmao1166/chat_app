@@ -70,7 +70,9 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
         // Initialize Socket.IO connection
         socketManager.connect(context) // Truyền context vào phương thức connect
         setupSocketListeners()
-    }    private fun setupSocketListeners() {
+    }
+
+    private fun setupSocketListeners() {
         // Listen for connection changes
         socketManager.addConnectionListener { isConnected ->
             viewModelScope.launch {
@@ -153,7 +155,9 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
                                 id = if (messageId.isNotEmpty()) messageId.toIntOrNull() else null,
                                 content = messageContent,
                                 timestamp = messageTimestamp,
-                                attachmentUrl = messageData.optString("attachmentUrl", null),
+                                attachmentUrl = messageData.optString("attachment_url",
+                                    null.toString()
+                                ),  // Sửa từ "attachmentUrl" thành "attachment_url"
                                 sender = MessageSender(
                                     id = senderId,
                                     username = messageData.optJSONObject("sender")?.optString("username") ?: "Unknown",
@@ -413,6 +417,54 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
             } catch (e: Exception) {
                 Log.e("ChatViewModel", "Error sending message via REST API", e)
                 _error.value = "Không thể gửi tin nhắn: ${e.localizedMessage}"
+            }
+        }
+    }
+
+    /**
+     * Sends a message with image attachment in the current conversation
+     * @param conversationId ID of the conversation
+     * @param content Message content (can be empty for image-only messages)
+     * @param imagePart MultipartBody.Part containing the image
+     */
+    fun sendMessageWithImage(conversationId: Comparable<*>?, content: String, imagePart: okhttp3.MultipartBody.Part) {
+        viewModelScope.launch {
+            try {
+                // Send message with image via REST API
+                val response = messageRepository.sendMessageWithImage(conversationId.toString(), content, imagePart)
+
+                if (response.isSuccessful) {
+                    val apiResponse = response.body()
+                    if (apiResponse?.success == true && apiResponse.data != null) {
+                        val newMessage = apiResponse.data
+
+                        // Add message ID to processed set to prevent duplicate from Socket.IO
+                        newMessage.id?.let { messageId ->
+                            processedMessageIds.add("id_$messageId")
+                        }
+
+                        // Update UI immediately with message from server
+                        val currentMessages = _messages.value?.toMutableList() ?: mutableListOf()
+                        currentMessages.add(newMessage)
+                        // Sort to maintain chronological order
+                        currentMessages.sortBy { parseTimestamp(it.timestamp) }
+                        _messages.value = currentMessages
+
+                        Log.d("ChatViewModel", "Message with image sent via REST API: ${newMessage.content} (ID: ${newMessage.id})")
+
+                        // Note: Socket.IO typically doesn't handle file uploads, so we rely on REST API for image messages
+                        // Other users will get the message through periodic refresh or WebSocket notifications
+                        
+                    } else {
+                        _error.value = apiResponse?.message ?: "Không thể gửi tin nhắn với hình ảnh"
+                    }
+                } else {
+                    _error.value = "Lỗi gửi tin nhắn với hình ảnh: ${response.code()}"
+                }
+
+            } catch (e: Exception) {
+                Log.e("ChatViewModel", "Error sending message with image via REST API", e)
+                _error.value = "Không thể gửi tin nhắn với hình ảnh: ${e.localizedMessage}"
             }
         }
     }

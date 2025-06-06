@@ -30,9 +30,7 @@
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toEndOf="@+id/senderImage"
             app:layout_constraintTop_toTopOf="@+id/senderImage"
-            tools:text="John Doe" />
-
-        <LinearLayout
+            tools:text="John Doe" />        <LinearLayout
             android:id="@+id/attachmentContainer"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
@@ -43,7 +41,16 @@
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toEndOf="@+id/senderImage"
             app:layout_constraintTop_toBottomOf="@+id/senderName">
-            <!-- Attachment content will be added here -->
+            
+            <ImageView
+                android:id="@+id/attachmentImage"
+                android:layout_width="match_parent"
+                android:layout_height="200dp"
+                android:scaleType="centerCrop"
+                android:background="@drawable/message_received_background"
+                android:layout_marginBottom="4dp"
+                android:contentDescription="Attached image" />
+                
         </LinearLayout>
 
         <androidx.constraintlayout.widget.ConstraintLayout

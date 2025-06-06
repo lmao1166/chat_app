@@ -1,8 +1,12 @@
 package com.example.chatapp.ui.home.chat
 
+import android.app.Activity
+import android.content.Intent
+import android.net.Uri
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
+import android.provider.MediaStore
 import android.text.Editable
 import android.text.TextWatcher
 import android.util.Log
@@ -10,6 +14,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.databinding.DataBindingUtil
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
@@ -20,6 +25,10 @@ import com.example.chatapp.databinding.FragmentChatRoomBinding
 import com.example.chatapp.model.response.ConversationResponse
 import com.example.chatapp.utils.TokenManager
 import com.example.chatapp.ui.home.chat.ChatViewModel
+import okhttp3.MediaType.Companion.toMediaTypeOrNull
+import okhttp3.MultipartBody
+import okhttp3.RequestBody.Companion.asRequestBody
+import java.io.File
 
 class ChatFragment : Fragment() {
     private var _binding: Any? = null
@@ -40,6 +49,17 @@ class ChatFragment : Fragment() {
     private var typingHandler: Handler? = null
     private var typingRunnable: Runnable? = null
     private var isCurrentlyTyping = false
+
+    // Image picker launcher
+    private val imagePickerLauncher = registerForActivityResult(
+        ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        if (result.resultCode == Activity.RESULT_OK) {
+            result.data?.data?.let { imageUri ->
+                handleSelectedImage(imageUri)
+            }
+        }
+    }
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -193,11 +213,9 @@ class ChatFragment : Fragment() {
         }
 
         // Setup typing indicator
-        setupTypingIndicator(binding)
-
-        // Setup attachment button if needed
+        setupTypingIndicator(binding)        // Setup attachment button for image selection
         binding.attachmentButton.setOnClickListener {
-            // TODO: Implement attachment functionality
+            openImagePicker()
         }
 
         // Setup menu button if needed
@@ -391,6 +409,86 @@ class ChatFragment : Fragment() {
         } else {
             Log.e("ChatFragment", "Cannot send message - no active conversation")
             Toast.makeText(context, "Không thể gửi tin nhắn - không có cuộc trò chuyện nào đang hoạt động", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    /**
+     * Opens image picker to select image from gallery
+     */
+    private fun openImagePicker() {
+        val intent = Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI).apply {
+            type = "image/*"
+        }
+        imagePickerLauncher.launch(intent)
+    }
+
+    /**
+     * Handles the selected image and sends it as a message
+     */
+    private fun handleSelectedImage(imageUri: Uri) {
+        try {
+            // Get file from URI
+            val file = getFileFromUri(imageUri)
+            if (file != null && file.exists()) {
+                // Create multipart body part for the image
+                val requestFile = file.asRequestBody("image/*".toMediaTypeOrNull())
+                val imagePart = MultipartBody.Part.createFormData("chatImage", file.name, requestFile)
+                
+                // Send message with image
+                sendMessageWithImage("", imagePart) // Empty content for image-only message
+            } else {
+                Toast.makeText(context, "Không thể đọc file hình ảnh", Toast.LENGTH_SHORT).show()
+            }
+        } catch (e: Exception) {
+            Log.e("ChatFragment", "Error handling selected image", e)
+            Toast.makeText(context, "Lỗi xử lý hình ảnh: ${e.message}", Toast.LENGTH_SHORT).show()
+        }
+    }    /**
+     * Converts URI to File using modern approach
+     */
+    private fun getFileFromUri(uri: Uri): File? {
+        return try {
+            val contentResolver = requireContext().contentResolver
+            
+            // Create temporary file
+            val inputStream = contentResolver.openInputStream(uri)
+            val tempFile = File.createTempFile("chat_image", ".jpg", requireContext().cacheDir)
+            
+            inputStream?.use { input ->
+                tempFile.outputStream().use { output ->
+                    input.copyTo(output)
+                }
+            }
+            
+            tempFile
+        } catch (e: Exception) {
+            Log.e("ChatFragment", "Error getting file from URI", e)
+            null
+        }
+    }
+
+    /**
+     * Sends a message with image attachment
+     */
+    private fun sendMessageWithImage(content: String, imagePart: MultipartBody.Part) {
+        // Get the conversation ID - either directly or from the ViewModel's current conversation
+        val activeConversationId = conversationId ?: viewModel.currentConversation.value?.id
+
+        if (activeConversationId != null) {
+            viewModel.sendMessageWithImage(activeConversationId, content, imagePart)
+
+            // Ensure RecyclerView scrolls to the newest message after sending
+            _chatRoomBinding?.let { binding ->
+                binding.messagesRecyclerView.post {
+                    val messageCount = messageAdapter.itemCount
+                    if (messageCount > 0) {
+                        binding.messagesRecyclerView.scrollToPosition(messageCount - 1)
+                    }
+                }
+            }
+        } else {
+            Log.e("ChatFragment", "Cannot send message with image - no active conversation")
+            Toast.makeText(context, "Không thể gửi hình ảnh - không có cuộc trò chuyện nào đang hoạt động", Toast.LENGTH_SHORT).show()
         }
     }
 

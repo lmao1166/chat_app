@@ -369,6 +369,13 @@ class SocketManager private constructor() {
         if (args.isNotEmpty() && args[0] is JSONObject) {
             val messageData = args[0] as JSONObject
             Log.d(TAG, "New message received: $messageData")
+
+            // DEBUG POINT: Đặt breakpoint ở đây để theo dõi tin nhắn nhận được qua socket
+            val attachmentUrl = messageData.optString("attachment_url")
+            if (attachmentUrl.isNotEmpty()) {
+                Log.d(TAG, "BREAKPOINT HERE - Message with attachment received: $attachmentUrl")
+            }
+
             messageListeners.forEach { it(messageData) }
         }
     }
@@ -522,9 +529,3 @@ class SocketManager private constructor() {
         return currentUserData
     }
 }
-
-
-
-
-
-

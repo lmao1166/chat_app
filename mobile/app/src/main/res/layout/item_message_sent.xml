@@ -6,9 +6,7 @@
     <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:padding="8dp">
-
-        <LinearLayout
+        android:padding="8dp">        <LinearLayout
             android:id="@+id/attachmentContainer"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
@@ -18,7 +16,16 @@
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="@+id/messageContainer"
             app:layout_constraintTop_toTopOf="parent">
-            <!-- Attachment content will be added here -->
+            
+            <ImageView
+                android:id="@+id/attachmentImage"
+                android:layout_width="match_parent"
+                android:layout_height="200dp"
+                android:scaleType="centerCrop"
+                android:background="@drawable/message_sent_background"
+                android:layout_marginBottom="4dp"
+                android:contentDescription="Attached image" />
+                
         </LinearLayout>
 
         <androidx.constraintlayout.widget.ConstraintLayout

@@ -56,16 +56,30 @@ class MessageAdapter(private val currentUserId: String) : ListAdapter<MessageRes
     }
 
     inner class SentMessageViewHolder(private val binding: ItemMessageSentBinding) :
-        RecyclerView.ViewHolder(binding.root) {
-
-        fun bind(message: MessageResponse) {
+        RecyclerView.ViewHolder(binding.root) {        fun bind(message: MessageResponse) {
             binding.messageContent.text = message.content
             binding.messageTime.text = formatTime(message.timestamp)
             
             // Handle attachment if available
             if (message.attachmentUrl != null) {
                 binding.attachmentContainer.visibility = View.VISIBLE
-                // TODO: Handle attachment display
+                
+                // Use the existing ImageView from layout
+                val imageView = binding.attachmentImage
+
+                // Load image using Picasso
+                val fullUrl = if (message.attachmentUrl.startsWith("http")) {
+                    message.attachmentUrl
+                } else {
+                    "http://192.168.1.10:3000/api/v1/uploads/chats/${message.attachmentUrl}"
+                }
+
+                Picasso.get()
+                    .load(fullUrl)
+                    .placeholder(R.drawable.ic_image_placeholder)
+                    .error(R.drawable.ic_image_error)
+                    .into(imageView)
+
             } else {
                 binding.attachmentContainer.visibility = View.GONE
             }
@@ -73,9 +87,7 @@ class MessageAdapter(private val currentUserId: String) : ListAdapter<MessageRes
     }
 
     inner class ReceivedMessageViewHolder(private val binding: ItemMessageReceivedBinding) :
-        RecyclerView.ViewHolder(binding.root) {
-
-        fun bind(message: MessageResponse) {
+        RecyclerView.ViewHolder(binding.root) {        fun bind(message: MessageResponse) {
             binding.messageContent.text = message.content
             binding.messageTime.text = formatTime(message.timestamp)
             binding.senderName.text = message.sender.username
@@ -97,11 +109,27 @@ class MessageAdapter(private val currentUserId: String) : ListAdapter<MessageRes
             } else {
                 binding.senderImage.setImageResource(R.drawable.default_avatar)
             }
-            
+
             // Handle attachment if available
             if (message.attachmentUrl != null) {
                 binding.attachmentContainer.visibility = View.VISIBLE
-                // TODO: Handle attachment display
+
+                // Use the existing ImageView from layout
+                val imageView = binding.attachmentImage
+
+                // Load image using Picasso
+                val fullUrl = if (message.attachmentUrl.startsWith("http")) {
+                    message.attachmentUrl
+                } else {
+                    "http://192.168.1.10:3000/api/v1/uploads/chats/${message.attachmentUrl}"
+                }
+
+                Picasso.get()
+                    .load(fullUrl)
+                    .placeholder(R.drawable.ic_image_placeholder)
+                    .error(R.drawable.ic_image_error)
+                    .into(imageView)
+
             } else {
                 binding.attachmentContainer.visibility = View.GONE
             }
