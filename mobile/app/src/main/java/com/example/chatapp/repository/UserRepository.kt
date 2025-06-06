@@ -21,7 +21,7 @@ class UserRepository {
         return RetrofitInstance.userApi.updateProfile(username, profilePicture)
     }
 
-    suspend fun changePassword(changePasswordRequest: ChangePasswordRequest): Response<ApiResponse<UserResponse>> {
+    suspend fun changePassword(changePasswordRequest: ChangePasswordRequest): Response<ApiResponse<Any>> {
         return RetrofitInstance.userApi.changePassword(changePasswordRequest)
     }
 

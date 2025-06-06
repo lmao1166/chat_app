@@ -70,7 +70,14 @@ class ChangePasswordFragment : Fragment() {
                     binding.progressBar.visibility = View.GONE
                 }
 
-                // Xử lý lỗi
+                // Xử lý thành công
+                if (state.isSuccess) {
+                    handleSuccessfulPasswordChange(state.successMessage)
+                    viewModel.clearSuccess()
+                    return@collect  // Stop processing here when we have success
+                }
+
+                // Xử lý lỗi (only if not success)
                 state.error?.let { error ->
                     Toast.makeText(context, error, Toast.LENGTH_SHORT).show()
 
@@ -80,11 +87,6 @@ class ChangePasswordFragment : Fragment() {
                     }
 
                     viewModel.clearError()
-                }
-
-                // Xử lý thành công
-                if (state.isSuccess) {
-                    handleSuccessfulPasswordChange(state.successMessage)
                 }
             }
         }
@@ -99,18 +101,25 @@ class ChangePasswordFragment : Fragment() {
 
     private fun handleSuccessfulPasswordChange(successMessage: String?) {
         val message = successMessage ?: "Đổi mật khẩu thành công"
-        Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
 
-        // Clear input fields
-        binding.currentPasswordEditText.text?.clear()
-        binding.newPasswordEditText.text?.clear()
-        binding.confirmPasswordEditText.text?.clear()
+        // Kiểm tra context tồn tại và fragment đang gắn với activity
+        activity?.let { safeActivity ->
+            if (isAdded && !isDetached) {
+                Toast.makeText(safeActivity, message, Toast.LENGTH_SHORT).show()
 
-        // Clear success message
-        viewModel.clearSuccess()
+                // Clear input fields
+                binding.currentPasswordEditText.text?.clear()
+                binding.newPasswordEditText.text?.clear()
+                binding.confirmPasswordEditText.text?.clear()
 
-        // Quay lại màn hình trước
-        parentFragmentManager.popBackStack()
+                // Trì hoãn việc quay lại màn hình trước để Toast có thể hiển thị
+                binding.root.postDelayed({
+                    if (isAdded && !isDetached) {
+                        parentFragmentManager.popBackStack()
+                    }
+                }, 500) // Trì hoãn 500ms
+            }
+        }
     }
 
     private fun showConfirmationDialog(request: ChangePasswordRequest) {

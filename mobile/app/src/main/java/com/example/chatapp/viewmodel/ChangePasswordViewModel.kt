@@ -17,9 +17,9 @@ class ChangePasswordViewModel(private val userRepository: UserRepository) : View
     private val _uiState = MutableStateFlow(ChangePasswordUiState())
     val uiState: StateFlow<ChangePasswordUiState> = _uiState.asStateFlow()
 
-    fun changePassword(currentPassword: String, newPassword: String, confirmPassword: String) {
+    private fun changePassword(currentPassword: String, newPassword: String, confirmPassword: String) {
         viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(isLoading = true, error = null)
+            _uiState.value = _uiState.value.copy(isLoading = true, error = null, isSuccess = false, successMessage = null)
             try {
                 // Tạo đối tượng ChangePasswordRequest để gọi API
                 val request = ChangePasswordRequest(currentPassword, newPassword, confirmPassword)
@@ -28,13 +28,22 @@ class ChangePasswordViewModel(private val userRepository: UserRepository) : View
                 if (response.isSuccessful) {
                     // Success case
                     val responseBody = response.body()
-                    val successMessage = responseBody?.message ?: "Đổi mật khẩu thành công"
-                    _uiState.value = _uiState.value.copy(
-                        isLoading = false,
-                        isSuccess = true,
-                        successMessage = successMessage,
-                        error = null
-                    )
+                    if (responseBody != null) {
+                        _uiState.value = _uiState.value.copy(
+                            isLoading = false,
+                            isSuccess = responseBody.success,
+                            successMessage = responseBody.message,
+                            error = null
+                        )
+                    } else {
+                        // Nếu response body null nhưng vẫn successful (hiếm gặp)
+                        _uiState.value = _uiState.value.copy(
+                            isLoading = false,
+                            isSuccess = true,
+                            successMessage = "Đổi mật khẩu thành công",
+                            error = null
+                        )
+                    }
                 } else {
                     // Error case - try to parse error response
                     var errorMessage = "Đã xảy ra lỗi"
@@ -77,7 +86,7 @@ class ChangePasswordViewModel(private val userRepository: UserRepository) : View
     }
 
     fun clearSuccess() {
-        _uiState.value = _uiState.value.copy(successMessage = null)
+        _uiState.value = _uiState.value.copy(isSuccess = false, successMessage = null)
     }
 
     fun resetState() {

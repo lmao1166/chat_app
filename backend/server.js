@@ -10,7 +10,6 @@ require('./src/models/user.model'); // Import model User
 require('./src/models/conversation.model'); // Import model Conversation
 require('./src/models/message.model'); // Import model Message
 require('./src/models/conversationMember.model'); // Import model ConversationMember
-require('./src/models/notification.model'); // Import model Notification
 require('./src/models/invalidatedToken.model'); // Import model InvalidatedToken
 
 const PORT = process.env.PORT || 3000;

@@ -68,6 +68,7 @@ class SocketService {
             socket.broadcast.emit('user_offline', { userId });
         });
     }    // Real-time event emission methods
+
     emitNewMessage(conversationId, message) {
         this._emitToConversation(conversationId, 'new_message', message);
     }

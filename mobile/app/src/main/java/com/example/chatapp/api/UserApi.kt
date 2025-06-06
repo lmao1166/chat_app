@@ -29,7 +29,7 @@ interface UserApi {
     ): Response<ApiResponse<UserResponse>>
 
     @PUT("api/v1/users/password")
-    suspend fun changePassword(@Body changePasswordRequest: ChangePasswordRequest): Response<ApiResponse<UserResponse>>
+    suspend fun changePassword(@Body changePasswordRequest: ChangePasswordRequest): Response<ApiResponse<Any>>
 
     @GET("api/v1/users/{id}")
     suspend fun findUserById(@Path("id") id: Int): Response<ApiResponse<UserResponse>>
